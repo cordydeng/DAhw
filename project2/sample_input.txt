@@ -1,0 +1,15 @@
+# Project 2 EOL DRC sample from the spec
+# Unit: um
+
+number_of_layers 1
+M1  1
+end_of_layer
+
+number_of_rectangles 6
+1  4.0  0.0,  7.8  0.6
+1  0.0  1.0,  6.1  1.6
+1  2.0  2.0,  4.0  2.6
+1  7.0  1.0,  14.0 1.6
+1  10.4 0.8,  11.0 1.8
+1  8.6  2.2,  14.0 2.8
+end_of_rectangle
