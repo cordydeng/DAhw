@@ -335,12 +335,38 @@ static MultiPolygon carve_blockage(const Box& bbox,
     return current;
 }
 
-static void collect_ring_coords(const Polygon::ring_type& ring,
-                                std::vector<double>& xs,
-                                std::vector<double>& ys) {
-    for (const auto& p : ring) {
-        xs.push_back(bg::get<0>(p));
-        ys.push_back(bg::get<1>(p));
+static double clamp_coord(double value, double low, double high) {
+    return std::max(low, std::min(value, high));
+}
+
+static void collect_expanded_pin_cutlines(const Box& bbox,
+                                          const std::vector<Pin>& pins,
+                                          double spacing,
+                                          std::vector<double>& xs,
+                                          std::vector<double>& ys) {
+    double min_x = bg::get<bg::min_corner, 0>(bbox);
+    double min_y = bg::get<bg::min_corner, 1>(bbox);
+    double max_x = bg::get<bg::max_corner, 0>(bbox);
+    double max_y = bg::get<bg::max_corner, 1>(bbox);
+
+    xs.push_back(min_x);
+    xs.push_back(max_x);
+    ys.push_back(min_y);
+    ys.push_back(max_y);
+
+    for (const auto& pin : pins) {
+        MultiPolygon expanded = buffer_polygon(pin.shape, spacing);
+        for (const auto& poly : expanded) {
+            Box expanded_box = polygon_box(poly);
+            xs.push_back(clamp_coord(
+                bg::get<bg::min_corner, 0>(expanded_box), min_x, max_x));
+            xs.push_back(clamp_coord(
+                bg::get<bg::max_corner, 0>(expanded_box), min_x, max_x));
+            ys.push_back(clamp_coord(
+                bg::get<bg::min_corner, 1>(expanded_box), min_y, max_y));
+            ys.push_back(clamp_coord(
+                bg::get<bg::max_corner, 1>(expanded_box), min_y, max_y));
+        }
     }
 }
 
@@ -364,14 +390,12 @@ static bool covered_by_any(const Polygon& cell, const MultiPolygon& mp) {
     return false;
 }
 
-static std::vector<Rect> decompose_to_rectangles(const MultiPolygon& blockage) {
+static std::vector<Rect> decompose_to_rectangles(const MultiPolygon& blockage,
+                                                 const Box& bbox,
+                                                 const std::vector<Pin>& pins,
+                                                 double spacing) {
     std::vector<double> xs, ys;
-
-    for (const auto& poly : blockage) {
-        collect_ring_coords(poly.outer(), xs, ys);
-        for (const auto& inner : poly.inners())
-            collect_ring_coords(inner, xs, ys);
-    }
+    collect_expanded_pin_cutlines(bbox, pins, spacing, xs, ys);
 
     unique_sort(xs);
     unique_sort(ys);
@@ -385,10 +409,6 @@ static std::vector<Rect> decompose_to_rectangles(const MultiPolygon& blockage) {
     std::vector<std::vector<bool>> occupied(
         ny, std::vector<bool>(nx, false)
     );
-    std::vector<std::vector<bool>> used(
-        ny, std::vector<bool>(nx, false)
-    );
-
     for (int j = 0; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
             Polygon cell = make_rectangle_polygon(
@@ -402,34 +422,20 @@ static std::vector<Rect> decompose_to_rectangles(const MultiPolygon& blockage) {
     std::vector<Rect> rects;
 
     for (int j = 0; j < ny; ++j) {
-        for (int i = 0; i < nx; ++i) {
-            if (!occupied[j][i] || used[j][i]) continue;
+        int i = 0;
+        while (i < nx) {
+            if (!occupied[j][i]) {
+                ++i;
+                continue;
+            }
 
             int i2 = i;
-            while (i2 + 1 < nx &&
-                   occupied[j][i2 + 1] &&
-                   !used[j][i2 + 1]) {
+            while (i2 + 1 < nx && occupied[j][i2 + 1]) {
                 ++i2;
             }
 
-            int j2 = j;
-            while (j2 + 1 < ny) {
-                bool ok = true;
-                for (int k = i; k <= i2; ++k) {
-                    if (!occupied[j2 + 1][k] || used[j2 + 1][k]) {
-                        ok = false;
-                        break;
-                    }
-                }
-                if (!ok) break;
-                ++j2;
-            }
-
-            for (int y = j; y <= j2; ++y)
-                for (int x = i; x <= i2; ++x)
-                    used[y][x] = true;
-
-            rects.push_back({xs[i], ys[j], xs[i2 + 1], ys[j2 + 1]});
+            rects.push_back({xs[i], ys[j], xs[i2 + 1], ys[j + 1]});
+            i = i2 + 1;
         }
     }
 
@@ -451,6 +457,27 @@ static std::string escape_xml(const std::string& value) {
     return result;
 }
 
+static std::string format_coord(double value) {
+    if (std::abs(value) < EPS) value = 0.0;
+
+    std::ostringstream out;
+    if (std::abs(value - std::round(value)) < EPS) {
+        out << static_cast<long long>(std::llround(value));
+    } else {
+        out << std::fixed << std::setprecision(3) << value;
+        std::string s = out.str();
+        while (!s.empty() && s.back() == '0') s.pop_back();
+        if (!s.empty() && s.back() == '.') s.pop_back();
+        return s;
+    }
+    return out.str();
+}
+
+static std::string format_point_label(const Point& p) {
+    return "(" + format_coord(bg::get<0>(p)) + ", " +
+           format_coord(bg::get<1>(p)) + ")";
+}
+
 static Box padded_display_box(const Box& box) {
     double min_x = bg::get<bg::min_corner, 0>(box);
     double min_y = bg::get<bg::min_corner, 1>(box);
@@ -461,9 +488,7 @@ static Box padded_display_box(const Box& box) {
                Point(max_x + padding, max_y + padding));
 }
 
-static void write_pin_labels(std::ostream& svg,
-                             const std::vector<Pin>& pins,
-                             const Box& display_bbox) {
+static Point svg_position(const Point& point, const Box& display_bbox) {
     constexpr double canvas = 800.0;
     double min_x = bg::get<bg::min_corner, 0>(display_bbox);
     double min_y = bg::get<bg::min_corner, 1>(display_bbox);
@@ -474,9 +499,83 @@ static void write_pin_labels(std::ostream& svg,
     double pad_x = (canvas - (max_x - min_x) * scale) / 2.0;
     double pad_y = (canvas - (max_y - min_y) * scale) / 2.0;
 
+    return Point(pad_x + (bg::get<0>(point) - min_x) * scale,
+                 pad_y + (max_y - bg::get<1>(point)) * scale);
+}
+
+static bool same_point(const Point& a, const Point& b) {
+    return std::abs(bg::get<0>(a) - bg::get<0>(b)) < EPS &&
+           std::abs(bg::get<1>(a) - bg::get<1>(b)) < EPS;
+}
+
+static void add_unique_point(std::vector<Point>& points, const Point& point) {
+    for (const auto& existing : points) {
+        if (same_point(existing, point)) return;
+    }
+    points.push_back(point);
+}
+
+static void collect_box_corners(const Box& box, std::vector<Point>& points) {
+    double min_x = bg::get<bg::min_corner, 0>(box);
+    double min_y = bg::get<bg::min_corner, 1>(box);
+    double max_x = bg::get<bg::max_corner, 0>(box);
+    double max_y = bg::get<bg::max_corner, 1>(box);
+
+    add_unique_point(points, Point(min_x, min_y));
+    add_unique_point(points, Point(max_x, max_y));
+}
+
+static void collect_shape_corners(const Polygon& polygon,
+                                  std::vector<Point>& points) {
+    collect_box_corners(polygon_box(polygon), points);
+}
+
+static void collect_pin_positions(const std::vector<Pin>& pins,
+                                  std::vector<Point>& points) {
     for (const auto& pin : pins) {
-        double x = pad_x + (bg::get<0>(pin.label_pos) - min_x) * scale;
-        double y = pad_y + (max_y - bg::get<1>(pin.label_pos)) * scale;
+        add_unique_point(points, pin.label_pos);
+    }
+}
+
+static void write_coordinate_labels(std::ostream& svg,
+                                    const std::vector<Point>& points,
+                                    const Box& display_bbox) {
+    svg << "<g font-family=\"sans-serif\" font-size=\"11\""
+        << " fill=\"#202124\" stroke-linejoin=\"round\">\n";
+
+    for (const auto& point : points) {
+        Point mapped = svg_position(point, display_bbox);
+        double x = bg::get<0>(mapped);
+        double y = bg::get<1>(mapped);
+        double text_x = x + 5.0;
+        double text_y = y - 5.0;
+        std::string anchor = "start";
+
+        if (x > 690.0) {
+            text_x = x - 5.0;
+            anchor = "end";
+        }
+        if (y < 22.0) text_y = y + 14.0;
+
+        svg << "<circle cx=\"" << x << "\" cy=\"" << y
+            << "\" r=\"2.5\" fill=\"#202124\" stroke=\"white\""
+            << " stroke-width=\"1\"/>\n"
+            << "<text x=\"" << text_x << "\" y=\"" << text_y
+            << "\" text-anchor=\"" << anchor << "\""
+            << " stroke=\"white\" stroke-width=\"3\" paint-order=\"stroke\">"
+            << escape_xml(format_point_label(point)) << "</text>\n";
+    }
+
+    svg << "</g>\n";
+}
+
+static void write_pin_labels(std::ostream& svg,
+                             const std::vector<Pin>& pins,
+                             const Box& display_bbox) {
+    for (const auto& pin : pins) {
+        Point mapped = svg_position(pin.label_pos, display_bbox);
+        double x = bg::get<0>(mapped);
+        double y = bg::get<1>(mapped);
         svg << "<text x=\"" << x << "\" y=\"" << y
             << "\" text-anchor=\"middle\" dominant-baseline=\"middle\""
             << " font-family=\"sans-serif\" font-size=\"16\""
@@ -494,14 +593,17 @@ static void write_svg_original(const std::string& filename,
     bg::svg_mapper<Point> mapper(svg, 800, 800);
     svg << "<rect x=\"0\" y=\"0\" width=\"800\" height=\"800\" fill=\"white\"/>\n";
     Box display_bbox = bbox;
+    std::vector<Point> coordinate_points;
 
     for (const auto& s : layout.polygons) {
         mapper.add(s.poly);
         bg::expand(display_bbox, polygon_box(s.poly));
+        collect_shape_corners(s.poly, coordinate_points);
     }
     for (const auto& s : layout.rectangles) {
         mapper.add(s.poly);
         bg::expand(display_bbox, polygon_box(s.poly));
+        collect_shape_corners(s.poly, coordinate_points);
     }
 
     Polygon border = make_rectangle_polygon(
@@ -535,6 +637,9 @@ static void write_svg_original(const std::string& filename,
 
     mapper.map(border,
         "fill:none;stroke:#315e9d;stroke-width:1");
+    collect_box_corners(bbox, coordinate_points);
+    collect_pin_positions(pins, coordinate_points);
+    write_coordinate_labels(svg, coordinate_points, display_bbox);
     write_pin_labels(svg, pins, display_bbox);
 }
 
@@ -546,16 +651,19 @@ static void write_svg_final(const std::string& filename,
     bg::svg_mapper<Point> mapper(svg, 800, 800);
     svg << "<rect x=\"0\" y=\"0\" width=\"800\" height=\"800\" fill=\"white\"/>\n";
     Box display_bbox = bbox;
+    std::vector<Point> coordinate_points;
 
     std::vector<Polygon> rect_polys;
     for (const auto& r : rects) {
         rect_polys.push_back(make_rectangle_polygon(r.xl, r.yl, r.xh, r.yh));
         mapper.add(rect_polys.back());
         bg::expand(display_bbox, polygon_box(rect_polys.back()));
+        collect_shape_corners(rect_polys.back(), coordinate_points);
     }
 
     for (const auto& p : pins) {
         mapper.add(p.shape);
+        collect_shape_corners(p.shape, coordinate_points);
     }
 
     Polygon border = make_rectangle_polygon(
@@ -584,6 +692,9 @@ static void write_svg_final(const std::string& filename,
 
     mapper.map(border,
         "fill:none;stroke:#315e9d;stroke-width:1");
+    collect_box_corners(bbox, coordinate_points);
+    collect_pin_positions(pins, coordinate_points);
+    write_coordinate_labels(svg, coordinate_points, display_bbox);
     write_pin_labels(svg, pins, display_bbox);
 }
 
@@ -598,6 +709,39 @@ static std::string svg_body(const std::string& filename) {
     if (start == std::string::npos || end == std::string::npos || end <= start)
         throw std::runtime_error("Invalid SVG file: " + filename);
     return xml.substr(start + 1, end - start - 1);
+}
+
+static void set_svg_viewbox(const std::string& filename,
+                            int width,
+                            int height) {
+    std::ifstream in(filename);
+    if (!in) throw std::runtime_error("Cannot open SVG file: " + filename);
+
+    std::ostringstream contents;
+    contents << in.rdbuf();
+    std::string xml = contents.str();
+
+    std::size_t start = xml.find("<svg");
+    std::size_t end = xml.find('>', start);
+    if (start == std::string::npos || end == std::string::npos)
+        throw std::runtime_error("Invalid SVG file: " + filename);
+
+    std::string tag = xml.substr(start, end - start + 1);
+    std::size_t version = tag.find("version=");
+    if (version == std::string::npos)
+        throw std::runtime_error("Invalid SVG tag in file: " + filename);
+
+    std::ostringstream replacement;
+    replacement << "<svg width=\"" << width << "\" height=\"" << height
+                << "\" viewBox=\"0 0 " << width << " " << height
+                << "\" preserveAspectRatio=\"xMidYMid meet\" ";
+
+    xml.replace(start, end - start + 1,
+                replacement.str() + tag.substr(version));
+
+    std::ofstream out(filename);
+    if (!out) throw std::runtime_error("Cannot write SVG file: " + filename);
+    out << xml;
 }
 
 static void write_comparison_svg(const std::string& filename) {
@@ -671,14 +815,16 @@ int main(int argc, char* argv[]) {
         }
 
         write_svg_original("A_original.svg", layout, all_pins, bbox);
+        set_svg_viewbox("A_original.svg", 800, 800);
 
         MultiPolygon final_blockage =
             carve_blockage(bbox, pins, MIN_SPACING);
 
         std::vector<Rect> rectangles =
-            decompose_to_rectangles(final_blockage);
+            decompose_to_rectangles(final_blockage, bbox, pins, MIN_SPACING);
 
         write_svg_final("B_blockage.svg", rectangles, pins, bbox);
+        set_svg_viewbox("B_blockage.svg", 800, 800);
         write_comparison_svg("AB_comparison.svg");
 
         print_results(bbox, pins, rectangles);
