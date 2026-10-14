@@ -14,6 +14,46 @@
 <g fill-rule="evenodd"><path d="M 292.308,76.9231 L 292.308,15.3846 L 353.846,15.3846 L 353.846,76.9231 L 292.308,76.9231 z " style="fill:#4779bf;stroke:#315e9d;stroke-width:1"/></g>
 <g fill-rule="evenodd"><path d="M 676.923,630.769 L 676.923,584.615 L 707.692,584.615 L 707.692,630.769 L 676.923,630.769 z " style="fill:#4779bf;stroke:#315e9d;stroke-width:1"/></g>
 <g fill-rule="evenodd"><path d="M 92.3077,784.615 L 92.3077,15.3846 L 707.692,15.3846 L 707.692,784.615 L 92.3077,784.615 z " style="fill:none;stroke:#315e9d;stroke-width:1"/></g>
+<g font-family="sans-serif" font-size="11" fill="#202124" stroke-linejoin="round">
+<circle cx="92.3077" cy="784.615" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="97.3077" y="779.615" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(0, 0)</text>
+<circle cx="246.154" cy="630.769" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="251.154" y="625.769" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(10, 10)</text>
+<circle cx="276.923" cy="738.462" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="281.923" y="733.462" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(12, 3)</text>
+<circle cx="584.615" cy="323.077" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="589.615" y="318.077" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(32, 30)</text>
+<circle cx="553.846" cy="784.615" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="558.846" y="779.615" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(30, 0)</text>
+<circle cx="707.692" cy="707.692" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="702.692" y="702.692" text-anchor="end" stroke="white" stroke-width="3" paint-order="stroke">(40, 5)</text>
+<circle cx="92.3077" cy="169.231" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="97.3077" y="164.231" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(0, 40)</text>
+<circle cx="184.615" cy="15.3846" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="189.615" y="29.3846" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(6, 50)</text>
+<circle cx="553.846" cy="138.462" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="558.846" y="133.462" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(30, 42)</text>
+<circle cx="707.692" cy="15.3846" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="702.692" y="29.3846" text-anchor="end" stroke="white" stroke-width="3" paint-order="stroke">(40, 50)</text>
+<circle cx="92.3077" cy="476.923" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="97.3077" y="471.923" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(0, 20)</text>
+<circle cx="138.462" cy="415.385" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="143.462" y="410.385" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(3, 24)</text>
+<circle cx="292.308" cy="76.9231" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="297.308" y="71.9231" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(13, 46)</text>
+<circle cx="353.846" cy="15.3846" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="358.846" y="29.3846" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(17, 50)</text>
+<circle cx="676.923" cy="630.769" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="681.923" y="625.769" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(38, 10)</text>
+<circle cx="707.692" cy="584.615" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="702.692" y="579.615" text-anchor="end" stroke="white" stroke-width="3" paint-order="stroke">(40, 13)</text>
+<circle cx="107.692" cy="461.538" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="112.692" y="456.538" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(1, 21)</text>
+<circle cx="307.692" cy="61.5385" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="312.692" y="56.5385" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(14, 47)</text>
+<circle cx="692.308" cy="600" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="687.308" y="595" text-anchor="end" stroke="white" stroke-width="3" paint-order="stroke">(39, 12)</text>
+</g>
 <text x="107.692" y="461.538" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="16" fill="white" stroke="#2f5d9f" stroke-width="0.5" paint-order="stroke">C</text>
 <text x="307.692" y="61.5385" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="16" fill="white" stroke="#2f5d9f" stroke-width="0.5" paint-order="stroke">A</text>
 <text x="692.308" y="600" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="16" fill="white" stroke="#2f5d9f" stroke-width="0.5" paint-order="stroke">B</text>
@@ -22,16 +62,64 @@
 <g transform="translate(880 0)">
 <rect x="0" y="0" width="800" height="800" fill="white"/>
 <g fill-rule="evenodd"><path d="M 92.3077,784.615 L 92.3077,638.462 L 707.692,638.462 L 707.692,784.615 L 92.3077,784.615 z " style="fill:#d0cece;stroke:#505050;stroke-width:1"/></g>
-<g fill-rule="evenodd"><path d="M 92.3077,638.462 L 92.3077,484.615 L 669.231,484.615 L 669.231,638.462 L 92.3077,638.462 z " style="fill:#d0cece;stroke:#505050;stroke-width:1"/></g>
-<g fill-rule="evenodd"><path d="M 669.231,576.923 L 669.231,15.3846 L 707.692,15.3846 L 707.692,576.923 L 669.231,576.923 z " style="fill:#d0cece;stroke:#505050;stroke-width:1"/></g>
-<g fill-rule="evenodd"><path d="M 146.154,484.615 L 146.154,84.6154 L 669.231,84.6154 L 669.231,484.615 L 146.154,484.615 z " style="fill:#d0cece;stroke:#505050;stroke-width:1"/></g>
-<g fill-rule="evenodd"><path d="M 92.3077,407.692 L 92.3077,15.3846 L 146.154,15.3846 L 146.154,407.692 L 92.3077,407.692 z " style="fill:#d0cece;stroke:#505050;stroke-width:1"/></g>
-<g fill-rule="evenodd"><path d="M 146.154,84.6154 L 146.154,15.3846 L 284.615,15.3846 L 284.615,84.6154 L 146.154,84.6154 z " style="fill:#d0cece;stroke:#505050;stroke-width:1"/></g>
-<g fill-rule="evenodd"><path d="M 361.538,84.6154 L 361.538,15.3846 L 669.231,15.3846 L 669.231,84.6154 L 361.538,84.6154 z " style="fill:#d0cece;stroke:#505050;stroke-width:1"/></g>
+<g fill-rule="evenodd"><path d="M 92.3077,638.462 L 92.3077,576.923 L 669.231,576.923 L 669.231,638.462 L 92.3077,638.462 z " style="fill:#d0cece;stroke:#505050;stroke-width:1"/></g>
+<g fill-rule="evenodd"><path d="M 92.3077,576.923 L 92.3077,484.615 L 707.692,484.615 L 707.692,576.923 L 92.3077,576.923 z " style="fill:#d0cece;stroke:#505050;stroke-width:1"/></g>
+<g fill-rule="evenodd"><path d="M 146.154,484.615 L 146.154,407.692 L 707.692,407.692 L 707.692,484.615 L 146.154,484.615 z " style="fill:#d0cece;stroke:#505050;stroke-width:1"/></g>
+<g fill-rule="evenodd"><path d="M 92.3077,407.692 L 92.3077,84.6154 L 707.692,84.6154 L 707.692,407.692 L 92.3077,407.692 z " style="fill:#d0cece;stroke:#505050;stroke-width:1"/></g>
+<g fill-rule="evenodd"><path d="M 92.3077,84.6154 L 92.3077,15.3846 L 284.615,15.3846 L 284.615,84.6154 L 92.3077,84.6154 z " style="fill:#d0cece;stroke:#505050;stroke-width:1"/></g>
+<g fill-rule="evenodd"><path d="M 361.538,84.6154 L 361.538,15.3846 L 707.692,15.3846 L 707.692,84.6154 L 361.538,84.6154 z " style="fill:#d0cece;stroke:#505050;stroke-width:1"/></g>
 <g fill-rule="evenodd"><path d="M 92.3077,476.923 L 92.3077,415.385 L 138.462,415.385 L 138.462,476.923 L 92.3077,476.923 z " style="fill:#4779bf;stroke:#315e9d;stroke-width:1"/></g>
 <g fill-rule="evenodd"><path d="M 292.308,76.9231 L 292.308,15.3846 L 353.846,15.3846 L 353.846,76.9231 L 292.308,76.9231 z " style="fill:#4779bf;stroke:#315e9d;stroke-width:1"/></g>
 <g fill-rule="evenodd"><path d="M 676.923,630.769 L 676.923,584.615 L 707.692,584.615 L 707.692,630.769 L 676.923,630.769 z " style="fill:#4779bf;stroke:#315e9d;stroke-width:1"/></g>
 <g fill-rule="evenodd"><path d="M 92.3077,784.615 L 92.3077,15.3846 L 707.692,15.3846 L 707.692,784.615 L 92.3077,784.615 z " style="fill:none;stroke:#315e9d;stroke-width:1"/></g>
+<g font-family="sans-serif" font-size="11" fill="#202124" stroke-linejoin="round">
+<circle cx="92.3077" cy="784.615" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="97.3077" y="779.615" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(0, 0)</text>
+<circle cx="707.692" cy="638.462" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="702.692" y="633.462" text-anchor="end" stroke="white" stroke-width="3" paint-order="stroke">(40, 9.5)</text>
+<circle cx="92.3077" cy="638.462" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="97.3077" y="633.462" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(0, 9.5)</text>
+<circle cx="669.231" cy="576.923" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="674.231" y="571.923" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(37.5, 13.5)</text>
+<circle cx="92.3077" cy="576.923" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="97.3077" y="571.923" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(0, 13.5)</text>
+<circle cx="707.692" cy="484.615" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="702.692" y="479.615" text-anchor="end" stroke="white" stroke-width="3" paint-order="stroke">(40, 19.5)</text>
+<circle cx="146.154" cy="484.615" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="151.154" y="479.615" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(3.5, 19.5)</text>
+<circle cx="707.692" cy="407.692" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="702.692" y="402.692" text-anchor="end" stroke="white" stroke-width="3" paint-order="stroke">(40, 24.5)</text>
+<circle cx="92.3077" cy="407.692" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="97.3077" y="402.692" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(0, 24.5)</text>
+<circle cx="707.692" cy="84.6154" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="702.692" y="79.6154" text-anchor="end" stroke="white" stroke-width="3" paint-order="stroke">(40, 45.5)</text>
+<circle cx="92.3077" cy="84.6154" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="97.3077" y="79.6154" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(0, 45.5)</text>
+<circle cx="284.615" cy="15.3846" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="289.615" y="29.3846" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(12.5, 50)</text>
+<circle cx="361.538" cy="84.6154" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="366.538" y="79.6154" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(17.5, 45.5)</text>
+<circle cx="707.692" cy="15.3846" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="702.692" y="29.3846" text-anchor="end" stroke="white" stroke-width="3" paint-order="stroke">(40, 50)</text>
+<circle cx="92.3077" cy="476.923" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="97.3077" y="471.923" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(0, 20)</text>
+<circle cx="138.462" cy="415.385" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="143.462" y="410.385" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(3, 24)</text>
+<circle cx="292.308" cy="76.9231" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="297.308" y="71.9231" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(13, 46)</text>
+<circle cx="353.846" cy="15.3846" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="358.846" y="29.3846" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(17, 50)</text>
+<circle cx="676.923" cy="630.769" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="681.923" y="625.769" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(38, 10)</text>
+<circle cx="707.692" cy="584.615" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="702.692" y="579.615" text-anchor="end" stroke="white" stroke-width="3" paint-order="stroke">(40, 13)</text>
+<circle cx="107.692" cy="461.538" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="112.692" y="456.538" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(1, 21)</text>
+<circle cx="307.692" cy="61.5385" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="312.692" y="56.5385" text-anchor="start" stroke="white" stroke-width="3" paint-order="stroke">(14, 47)</text>
+<circle cx="692.308" cy="600" r="2.5" fill="#202124" stroke="white" stroke-width="1"/>
+<text x="687.308" y="595" text-anchor="end" stroke="white" stroke-width="3" paint-order="stroke">(39, 12)</text>
+</g>
 <text x="107.692" y="461.538" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="16" fill="white" stroke="#2f5d9f" stroke-width="0.5" paint-order="stroke">C</text>
 <text x="307.692" y="61.5385" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="16" fill="white" stroke="#2f5d9f" stroke-width="0.5" paint-order="stroke">A</text>
 <text x="692.308" y="600" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="16" fill="white" stroke="#2f5d9f" stroke-width="0.5" paint-order="stroke">B</text>
