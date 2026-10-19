@@ -7,6 +7,7 @@
 #include <boost/geometry/io/svg/svg_mapper.hpp>
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
@@ -14,6 +15,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace bg = boost::geometry;
@@ -56,6 +58,19 @@ struct Pin {
 
 struct Rect {
     double xl, yl, xh, yh;
+};
+
+struct LayerResult {
+    Layer layer;
+    Box bbox;
+    std::vector<Pin> pins;
+    MultiPolygon blockage;
+    std::vector<Rect> rectangles;
+};
+
+struct PinStyle {
+    std::string fill;
+    std::string stroke;
 };
 
 static constexpr double EPS = 1e-9;
@@ -224,15 +239,7 @@ static Layout parse_layout(const std::string& filename) {
     return layout;
 }
 
-static int m1_layer_number(const Layout& layout) {
-    for (const auto& layer : layout.layers) {
-        if (layer.name == "M1") return layer.number;
-    }
-    throw std::runtime_error("Input does not define an M1 layer.");
-}
-
-static Box layer_bbox(const Layout& layout, int layer) {
-    Box bbox;
+static bool layer_bbox(const Layout& layout, int layer, Box& bbox) {
     bool initialized = false;
 
     for (const auto& s : layout.polygons)
@@ -242,10 +249,7 @@ static Box layer_bbox(const Layout& layout, int layer) {
         if (s.layer == layer)
             expand_box(bbox, polygon_box(s.poly), initialized);
 
-    if (!initialized)
-        throw std::runtime_error("No M1 polygons or rectangles in input.");
-
-    return bbox;
+    return initialized;
 }
 
 static std::vector<Pin> identify_pins(const Layout& layout) {
@@ -390,13 +394,10 @@ static bool covered_by_any(const Polygon& cell, const MultiPolygon& mp) {
     return false;
 }
 
-static std::vector<Rect> decompose_to_rectangles(const MultiPolygon& blockage,
-                                                 const Box& bbox,
-                                                 const std::vector<Pin>& pins,
-                                                 double spacing) {
-    std::vector<double> xs, ys;
-    collect_expanded_pin_cutlines(bbox, pins, spacing, xs, ys);
-
+static std::vector<Rect> decompose_using_cutlines(
+    const MultiPolygon& blockage,
+    std::vector<double> xs,
+    std::vector<double> ys) {
     unique_sort(xs);
     unique_sort(ys);
 
@@ -442,6 +443,15 @@ static std::vector<Rect> decompose_to_rectangles(const MultiPolygon& blockage,
     return rects;
 }
 
+static std::vector<Rect> decompose_to_rectangles(const MultiPolygon& blockage,
+                                                 const Box& bbox,
+                                                 const std::vector<Pin>& pins,
+                                                 double spacing) {
+    std::vector<double> xs, ys;
+    collect_expanded_pin_cutlines(bbox, pins, spacing, xs, ys);
+    return decompose_using_cutlines(blockage, std::move(xs), std::move(ys));
+}
+
 static std::string escape_xml(const std::string& value) {
     std::string result;
     for (char ch : value) {
@@ -457,27 +467,6 @@ static std::string escape_xml(const std::string& value) {
     return result;
 }
 
-static std::string format_coord(double value) {
-    if (std::abs(value) < EPS) value = 0.0;
-
-    std::ostringstream out;
-    if (std::abs(value - std::round(value)) < EPS) {
-        out << static_cast<long long>(std::llround(value));
-    } else {
-        out << std::fixed << std::setprecision(3) << value;
-        std::string s = out.str();
-        while (!s.empty() && s.back() == '0') s.pop_back();
-        if (!s.empty() && s.back() == '.') s.pop_back();
-        return s;
-    }
-    return out.str();
-}
-
-static std::string format_point_label(const Point& p) {
-    return "(" + format_coord(bg::get<0>(p)) + ", " +
-           format_coord(bg::get<1>(p)) + ")";
-}
-
 static Box padded_display_box(const Box& box) {
     double min_x = bg::get<bg::min_corner, 0>(box);
     double min_y = bg::get<bg::min_corner, 1>(box);
@@ -488,227 +477,263 @@ static Box padded_display_box(const Box& box) {
                Point(max_x + padding, max_y + padding));
 }
 
-static Point svg_position(const Point& point, const Box& display_bbox) {
-    constexpr double canvas = 800.0;
-    double min_x = bg::get<bg::min_corner, 0>(display_bbox);
-    double min_y = bg::get<bg::min_corner, 1>(display_bbox);
-    double max_x = bg::get<bg::max_corner, 0>(display_bbox);
-    double max_y = bg::get<bg::max_corner, 1>(display_bbox);
-    double scale = std::min(canvas / (max_x - min_x),
-                            canvas / (max_y - min_y));
-    double pad_x = (canvas - (max_x - min_x) * scale) / 2.0;
-    double pad_y = (canvas - (max_y - min_y) * scale) / 2.0;
-
-    return Point(pad_x + (bg::get<0>(point) - min_x) * scale,
-                 pad_y + (max_y - bg::get<1>(point)) * scale);
-}
-
-static bool same_point(const Point& a, const Point& b) {
-    return std::abs(bg::get<0>(a) - bg::get<0>(b)) < EPS &&
-           std::abs(bg::get<1>(a) - bg::get<1>(b)) < EPS;
-}
-
-static void add_unique_point(std::vector<Point>& points, const Point& point) {
-    for (const auto& existing : points) {
-        if (same_point(existing, point)) return;
-    }
-    points.push_back(point);
-}
-
-static void collect_box_corners(const Box& box, std::vector<Point>& points) {
-    double min_x = bg::get<bg::min_corner, 0>(box);
-    double min_y = bg::get<bg::min_corner, 1>(box);
-    double max_x = bg::get<bg::max_corner, 0>(box);
-    double max_y = bg::get<bg::max_corner, 1>(box);
-
-    add_unique_point(points, Point(min_x, min_y));
-    add_unique_point(points, Point(max_x, max_y));
-}
-
-static void collect_shape_corners(const Polygon& polygon,
-                                  std::vector<Point>& points) {
-    collect_box_corners(polygon_box(polygon), points);
-}
-
-static void collect_pin_positions(const std::vector<Pin>& pins,
-                                  std::vector<Point>& points) {
-    for (const auto& pin : pins) {
-        add_unique_point(points, pin.label_pos);
-    }
-}
-
-static void write_coordinate_labels(std::ostream& svg,
-                                    const std::vector<Point>& points,
-                                    const Box& display_bbox) {
-    svg << "<g font-family=\"sans-serif\" font-size=\"11\""
-        << " fill=\"#202124\" stroke-linejoin=\"round\">\n";
-
-    for (const auto& point : points) {
-        Point mapped = svg_position(point, display_bbox);
-        double x = bg::get<0>(mapped);
-        double y = bg::get<1>(mapped);
-        double text_x = x + 5.0;
-        double text_y = y - 5.0;
-        std::string anchor = "start";
-
-        if (x > 690.0) {
-            text_x = x - 5.0;
-            anchor = "end";
+static std::string layer_filename(const Layer& layer) {
+    std::string name;
+    for (unsigned char ch : layer.name) {
+        if (std::isalnum(ch) || ch == '-' || ch == '_') {
+            name += static_cast<char>(ch);
+        } else {
+            name += '_';
         }
-        if (y < 22.0) text_y = y + 14.0;
-
-        svg << "<circle cx=\"" << x << "\" cy=\"" << y
-            << "\" r=\"2.5\" fill=\"#202124\" stroke=\"white\""
-            << " stroke-width=\"1\"/>\n"
-            << "<text x=\"" << text_x << "\" y=\"" << text_y
-            << "\" text-anchor=\"" << anchor << "\""
-            << " stroke=\"white\" stroke-width=\"3\" paint-order=\"stroke\">"
-            << escape_xml(format_point_label(point)) << "</text>\n";
     }
-
-    svg << "</g>\n";
+    if (name.empty()) name = "layer_" + std::to_string(layer.number);
+    return name + ".svg";
 }
 
-static void write_pin_labels(std::ostream& svg,
-                             const std::vector<Pin>& pins,
-                             const Box& display_bbox) {
+static PinStyle pin_style(std::size_t layer_index) {
+    static const std::vector<PinStyle> styles = {
+        {"#4779bf", "#315e9d"},
+        {"#dc741e", "#93450d"},
+        {"#319269", "#1f6548"},
+        {"#7954b3", "#50337e"},
+        {"#c95050", "#873232"},
+        {"#24939d", "#17636a"},
+        {"#b89a22", "#735f14"},
+        {"#b74e8d", "#7b315e"}
+    };
+    return styles[layer_index % styles.size()];
+}
+
+static std::vector<Polygon> rectangle_polygons(const std::vector<Rect>& rects) {
+    std::vector<Polygon> polygons;
+    polygons.reserve(rects.size());
+    for (const auto& rect : rects) {
+        polygons.push_back(
+            make_rectangle_polygon(rect.xl, rect.yl, rect.xh, rect.yh));
+    }
+    return polygons;
+}
+
+static Polygon box_polygon(const Box& bbox) {
+    return make_rectangle_polygon(
+        bg::get<bg::min_corner, 0>(bbox),
+        bg::get<bg::min_corner, 1>(bbox),
+        bg::get<bg::max_corner, 0>(bbox),
+        bg::get<bg::max_corner, 1>(bbox));
+}
+
+static void write_layer_svg(const std::string& filename,
+                            const LayerResult& result) {
+    std::ofstream svg(filename);
+    if (!svg) throw std::runtime_error("Cannot write SVG file: " + filename);
+
+    bg::svg_mapper<Point> mapper(svg, 800, 800);
+    svg << "<rect x=\"0\" y=\"0\" width=\"800\" height=\"800\" fill=\"white\"/>\n";
+    Box display_bbox = result.bbox;
+
+    for (const auto& polygon : result.blockage) mapper.add(polygon);
+    for (const auto& pin : result.pins) mapper.add(pin.shape);
+
+    Polygon border = box_polygon(result.bbox);
+    mapper.add(border);
+    display_bbox = padded_display_box(display_bbox);
+    mapper.add(box_polygon(display_bbox));
+
+    const std::string blockage_style =
+        "fill:#d0cece;fill-opacity:0.68;stroke:#505050;stroke-width:1";
+    const std::string pin_style =
+        "fill:#4779bf;fill-opacity:0.78;stroke:#315e9d;stroke-width:1";
+
+    for (const auto& polygon : result.blockage) {
+        mapper.map(polygon, blockage_style);
+    }
+    for (const auto& pin : result.pins) {
+        mapper.map(pin.shape, pin_style);
+    }
+
+    mapper.map(border, "fill:none;stroke:#404040;stroke-width:1.5");
+    svg << "<g font-family=\"sans-serif\" font-size=\"15\">\n"
+        << "<rect x=\"10\" y=\"10\" width=\"180\" height=\"30\""
+        << " rx=\"5\" fill=\"white\" fill-opacity=\"0.88\""
+        << " stroke=\"#555\"/>\n"
+        << "<text x=\"20\" y=\"30\" fill=\"#202124\">Metal layer: "
+        << escape_xml(result.layer.name) << "</text>\n"
+        << "</g>\n";
+}
+
+static MultiPolygon union_pin_keepouts(const std::vector<Pin>& pins,
+                                       double spacing) {
+    MultiPolygon merged;
+
     for (const auto& pin : pins) {
-        Point mapped = svg_position(pin.label_pos, display_bbox);
-        double x = bg::get<0>(mapped);
-        double y = bg::get<1>(mapped);
-        svg << "<text x=\"" << x << "\" y=\"" << y
-            << "\" text-anchor=\"middle\" dominant-baseline=\"middle\""
-            << " font-family=\"sans-serif\" font-size=\"16\""
-            << " fill=\"white\" stroke=\"#2f5d9f\" stroke-width=\"0.5\""
-            << " paint-order=\"stroke\">" << escape_xml(pin.name)
-            << "</text>\n";
+        MultiPolygon expanded = buffer_polygon(pin.shape, spacing);
+        for (const auto& polygon : expanded) {
+            if (merged.empty()) {
+                merged.push_back(polygon);
+                continue;
+            }
+
+            MultiPolygon addition;
+            addition.push_back(polygon);
+            MultiPolygon next;
+            bg::union_(merged, addition, next);
+            for (auto& part : next) bg::correct(part);
+            merged = std::move(next);
+        }
+    }
+
+    return merged;
+}
+
+static MultiPolygon carve_keepout_union(const Box& bbox,
+                                        const MultiPolygon& keepouts) {
+    MultiPolygon current;
+    current.push_back(box_polygon(bbox));
+
+    for (const auto& cut : keepouts) {
+        MultiPolygon next;
+        for (const auto& region : current) {
+            MultiPolygon difference;
+            bg::difference(region, cut, difference);
+            for (auto& polygon : difference) {
+                bg::correct(polygon);
+                if (std::abs(bg::area(polygon)) > EPS) {
+                    next.push_back(std::move(polygon));
+                }
+            }
+        }
+        current = std::move(next);
+    }
+
+    return current;
+}
+
+static void collect_keepout_union_cutlines(const Box& bbox,
+                                           const MultiPolygon& keepouts,
+                                           std::vector<double>& xs,
+                                           std::vector<double>& ys) {
+    const double min_x = bg::get<bg::min_corner, 0>(bbox);
+    const double min_y = bg::get<bg::min_corner, 1>(bbox);
+    const double max_x = bg::get<bg::max_corner, 0>(bbox);
+    const double max_y = bg::get<bg::max_corner, 1>(bbox);
+
+    xs.push_back(min_x);
+    xs.push_back(max_x);
+    ys.push_back(min_y);
+    ys.push_back(max_y);
+
+    auto collect_ring = [&](const Polygon::ring_type& ring) {
+        std::size_t count = ring.size();
+        if (count > 1) {
+            const Point& first = ring.front();
+            const Point& last = ring.back();
+            if (std::abs(bg::get<0>(first) - bg::get<0>(last)) < EPS &&
+                std::abs(bg::get<1>(first) - bg::get<1>(last)) < EPS) {
+                --count;
+            }
+        }
+        if (count < 3) return;
+
+        for (std::size_t i = 0; i < count; ++i) {
+            const Point& previous = ring[(i + count - 1) % count];
+            const Point& current = ring[i];
+            const Point& next = ring[(i + 1) % count];
+
+            const double dx1 = bg::get<0>(current) - bg::get<0>(previous);
+            const double dy1 = bg::get<1>(current) - bg::get<1>(previous);
+            const double dx2 = bg::get<0>(next) - bg::get<0>(current);
+            const double dy2 = bg::get<1>(next) - bg::get<1>(current);
+            const double cross = dx1 * dy2 - dy1 * dx2;
+
+            // Boost buffer/union may retain original pin vertices as
+            // collinear points on an expanded edge. They are not geometric
+            // corners and must not create extra BPV cutlines.
+            if (std::abs(cross) <= EPS) continue;
+
+            xs.push_back(clamp_coord(
+                bg::get<0>(current), min_x, max_x));
+            ys.push_back(clamp_coord(
+                bg::get<1>(current), min_y, max_y));
+        }
+    };
+
+    for (const auto& polygon : keepouts) {
+        collect_ring(polygon.outer());
+        for (const auto& inner : polygon.inners()) collect_ring(inner);
     }
 }
 
-static void write_svg_original(const std::string& filename,
-                               const Layout& layout,
-                               const std::vector<Pin>& pins,
-                               const Box& bbox) {
+static void write_bpv_svg(const std::string& filename,
+                          const std::vector<LayerResult>& results) {
     std::ofstream svg(filename);
+    if (!svg) throw std::runtime_error("Cannot write SVG file: " + filename);
+
     bg::svg_mapper<Point> mapper(svg, 800, 800);
     svg << "<rect x=\"0\" y=\"0\" width=\"800\" height=\"800\" fill=\"white\"/>\n";
-    Box display_bbox = bbox;
-    std::vector<Point> coordinate_points;
 
-    for (const auto& s : layout.polygons) {
-        mapper.add(s.poly);
-        bg::expand(display_bbox, polygon_box(s.poly));
-        collect_shape_corners(s.poly, coordinate_points);
-    }
-    for (const auto& s : layout.rectangles) {
-        mapper.add(s.poly);
-        bg::expand(display_bbox, polygon_box(s.poly));
-        collect_shape_corners(s.poly, coordinate_points);
+    Box overall_bbox = results.front().bbox;
+    std::vector<Pin> all_pins;
+    for (const auto& result : results) {
+        bg::expand(overall_bbox, result.bbox);
+        all_pins.insert(all_pins.end(), result.pins.begin(), result.pins.end());
     }
 
-    Polygon border = make_rectangle_polygon(
-        bg::get<bg::min_corner, 0>(bbox),
-        bg::get<bg::min_corner, 1>(bbox),
-        bg::get<bg::max_corner, 0>(bbox),
-        bg::get<bg::max_corner, 1>(bbox)
-    );
+    MultiPolygon keepout_union =
+        union_pin_keepouts(all_pins, MIN_SPACING);
+    MultiPolygon overall_blockage =
+        carve_keepout_union(overall_bbox, keepout_union);
+    std::vector<double> xs, ys;
+    collect_keepout_union_cutlines(overall_bbox, keepout_union, xs, ys);
+    std::vector<Rect> overall_rectangles = decompose_using_cutlines(
+        overall_blockage, std::move(xs), std::move(ys));
+    std::vector<Polygon> overall_polygons =
+        rectangle_polygons(overall_rectangles);
+
+    Box display_bbox = padded_display_box(overall_bbox);
+    mapper.add(box_polygon(display_bbox));
+    for (const auto& polygon : overall_polygons) mapper.add(polygon);
+    for (const auto& pin : all_pins) mapper.add(pin.shape);
+    Polygon border = box_polygon(overall_bbox);
     mapper.add(border);
-    display_bbox = padded_display_box(display_bbox);
-    mapper.add(make_rectangle_polygon(
-        bg::get<bg::min_corner, 0>(display_bbox),
-        bg::get<bg::min_corner, 1>(display_bbox),
-        bg::get<bg::max_corner, 0>(display_bbox),
-        bg::get<bg::max_corner, 1>(display_bbox)));
 
-    for (const auto& s : layout.polygons) {
-        mapper.map(s.poly,
-            "fill:#93addb;stroke:#416da9;stroke-width:1");
+    for (const auto& polygon : overall_polygons) {
+        mapper.map(polygon,
+            "fill:#d0cece;fill-opacity:0.68;stroke:#505050;stroke-width:1.2");
     }
 
-    for (const auto& s : layout.rectangles) {
-        mapper.map(s.poly,
-            "fill:#93addb;stroke:#416da9;stroke-width:1");
+    for (std::size_t i = 0; i < results.size(); ++i) {
+        PinStyle style = pin_style(i);
+        const std::string svg_style =
+            "fill:" + style.fill + ";fill-opacity:0.72;stroke:" +
+            style.stroke + ";stroke-width:1.2";
+        for (const auto& pin : results[i].pins) {
+            mapper.map(pin.shape, svg_style);
+        }
     }
 
-    for (const auto& p : pins) {
-        mapper.map(p.shape,
-            "fill:#4779bf;stroke:#315e9d;stroke-width:1");
+    mapper.map(border, "fill:none;stroke:#315e9d;stroke-width:1.5");
+
+    const double legend_height = 36.0 + 24.0 * results.size();
+    svg << "<g font-family=\"sans-serif\" font-size=\"14\">\n"
+        << "<rect x=\"10\" y=\"10\" width=\"175\" height=\""
+        << legend_height
+        << "\" rx=\"5\" fill=\"white\" fill-opacity=\"0.88\""
+        << " stroke=\"#555\"/>\n"
+        << "<rect x=\"20\" y=\"16\" width=\"18\" height=\"14\""
+        << " fill=\"#d0cece\" stroke=\"#505050\"/>\n"
+        << "<text x=\"47\" y=\"27\" fill=\"#202124\">"
+        << "Overall blockage</text>\n";
+    for (std::size_t i = 0; i < results.size(); ++i) {
+        PinStyle style = pin_style(i);
+        const double y = 51.0 + 24.0 * i;
+        svg << "<rect x=\"20\" y=\"" << y - 11.0
+            << "\" width=\"18\" height=\"14\" fill=\""
+            << style.fill << "\" stroke=\"" << style.stroke << "\"/>\n"
+            << "<text x=\"47\" y=\"" << y
+            << "\" fill=\"#202124\">"
+            << escape_xml(results[i].layer.name) << " pins</text>\n";
     }
-
-    mapper.map(border,
-        "fill:none;stroke:#315e9d;stroke-width:1");
-    collect_box_corners(bbox, coordinate_points);
-    collect_pin_positions(pins, coordinate_points);
-    write_coordinate_labels(svg, coordinate_points, display_bbox);
-    write_pin_labels(svg, pins, display_bbox);
-}
-
-static void write_svg_final(const std::string& filename,
-                            const std::vector<Rect>& rects,
-                            const std::vector<Pin>& pins,
-                            const Box& bbox) {
-    std::ofstream svg(filename);
-    bg::svg_mapper<Point> mapper(svg, 800, 800);
-    svg << "<rect x=\"0\" y=\"0\" width=\"800\" height=\"800\" fill=\"white\"/>\n";
-    Box display_bbox = bbox;
-    std::vector<Point> coordinate_points;
-
-    std::vector<Polygon> rect_polys;
-    for (const auto& r : rects) {
-        rect_polys.push_back(make_rectangle_polygon(r.xl, r.yl, r.xh, r.yh));
-        mapper.add(rect_polys.back());
-        bg::expand(display_bbox, polygon_box(rect_polys.back()));
-        collect_shape_corners(rect_polys.back(), coordinate_points);
-    }
-
-    for (const auto& p : pins) {
-        mapper.add(p.shape);
-        collect_shape_corners(p.shape, coordinate_points);
-    }
-
-    Polygon border = make_rectangle_polygon(
-        bg::get<bg::min_corner, 0>(bbox),
-        bg::get<bg::min_corner, 1>(bbox),
-        bg::get<bg::max_corner, 0>(bbox),
-        bg::get<bg::max_corner, 1>(bbox)
-    );
-    mapper.add(border);
-    display_bbox = padded_display_box(display_bbox);
-    mapper.add(make_rectangle_polygon(
-        bg::get<bg::min_corner, 0>(display_bbox),
-        bg::get<bg::min_corner, 1>(display_bbox),
-        bg::get<bg::max_corner, 0>(display_bbox),
-        bg::get<bg::max_corner, 1>(display_bbox)));
-
-    for (const auto& p : rect_polys) {
-        mapper.map(p,
-            "fill:#d0cece;stroke:#505050;stroke-width:1");
-    }
-
-    for (const auto& p : pins) {
-        mapper.map(p.shape,
-            "fill:#4779bf;stroke:#315e9d;stroke-width:1");
-    }
-
-    mapper.map(border,
-        "fill:none;stroke:#315e9d;stroke-width:1");
-    collect_box_corners(bbox, coordinate_points);
-    collect_pin_positions(pins, coordinate_points);
-    write_coordinate_labels(svg, coordinate_points, display_bbox);
-    write_pin_labels(svg, pins, display_bbox);
-}
-
-static std::string svg_body(const std::string& filename) {
-    std::ifstream file(filename);
-    if (!file) throw std::runtime_error("Cannot open SVG file: " + filename);
-    std::ostringstream contents;
-    contents << file.rdbuf();
-    std::string xml = contents.str();
-    std::size_t start = xml.find('>', xml.find("<svg"));
-    std::size_t end = xml.rfind("</svg>");
-    if (start == std::string::npos || end == std::string::npos || end <= start)
-        throw std::runtime_error("Invalid SVG file: " + filename);
-    return xml.substr(start + 1, end - start - 1);
+    svg << "</g>\n";
 }
 
 static void set_svg_viewbox(const std::string& filename,
@@ -744,58 +769,44 @@ static void set_svg_viewbox(const std::string& filename,
     out << xml;
 }
 
-static void write_comparison_svg(const std::string& filename) {
-    std::string original = svg_body("A_original.svg");
-    std::string blockage = svg_body("B_blockage.svg");
-    std::ofstream svg(filename);
-    if (!svg) throw std::runtime_error("Cannot write SVG file: " + filename);
-    svg << "<svg xmlns=\"http://www.w3.org/2000/svg\" "
-        << "width=\"1680\" height=\"800\" viewBox=\"0 0 1680 800\">\n"
-        << "<rect width=\"1680\" height=\"800\" fill=\"white\"/>\n"
-        << "<g>" << original << "</g>\n"
-        << "<path d=\"M 808,385 L 844,385 L 844,373 "
-        << "L 875,400 L 844,427 L 844,415 L 808,415 Z\" "
-        << "fill=\"#ffeb00\" stroke=\"#315e9d\" stroke-width=\"2\"/>\n"
-        << "<g transform=\"translate(880 0)\">" << blockage << "</g>\n"
-        << "</svg>\n";
-}
-
-static void print_results(const Box& bbox,
-                          const std::vector<Pin>& pins,
-                          const std::vector<Rect>& rects) {
+static void print_results(const std::vector<LayerResult>& results) {
     std::cout << std::fixed << std::setprecision(3);
 
-    std::cout << "=== Smallest enclosing rectangle ===\n";
-    std::cout << "("
-              << bg::get<bg::min_corner, 0>(bbox) << ", "
-              << bg::get<bg::min_corner, 1>(bbox) << ") -> ("
-              << bg::get<bg::max_corner, 0>(bbox) << ", "
-              << bg::get<bg::max_corner, 1>(bbox) << ")\n\n";
+    for (const auto& result : results) {
+        std::cout << "=== Layer " << result.layer.name
+                  << " (" << result.layer.number << ") ===\n"
+                  << "Bounding box: ("
+                  << bg::get<bg::min_corner, 0>(result.bbox) << ", "
+                  << bg::get<bg::min_corner, 1>(result.bbox) << ") -> ("
+                  << bg::get<bg::max_corner, 0>(result.bbox) << ", "
+                  << bg::get<bg::max_corner, 1>(result.bbox) << ")\n";
 
-    std::cout << "=== Pins identified from text locations ===\n";
-    for (const auto& p : pins) {
-        Box b = polygon_box(p.shape);
-        std::cout << "Pin " << p.name
-                  << "  layer=" << p.layer
-                  << "  bbox=("
-                  << bg::get<bg::min_corner, 0>(b) << ", "
-                  << bg::get<bg::min_corner, 1>(b) << ") -> ("
-                  << bg::get<bg::max_corner, 0>(b) << ", "
-                  << bg::get<bg::max_corner, 1>(b) << ")\n";
+        std::cout << "Pins:\n";
+        if (result.pins.empty()) std::cout << "  (none)\n";
+        for (const auto& pin : result.pins) {
+            Box pin_box = polygon_box(pin.shape);
+            std::cout << "  " << pin.name << "  bbox=("
+                      << bg::get<bg::min_corner, 0>(pin_box) << ", "
+                      << bg::get<bg::min_corner, 1>(pin_box) << ") -> ("
+                      << bg::get<bg::max_corner, 0>(pin_box) << ", "
+                      << bg::get<bg::max_corner, 1>(pin_box) << ")\n";
+        }
+
+        std::cout << "Blockage rectangles:\n";
+        for (std::size_t i = 0; i < result.rectangles.size(); ++i) {
+            const auto& rect = result.rectangles[i];
+            std::cout << "  R" << (i + 1) << ": "
+                      << rect.xl << " " << rect.yl << ", "
+                      << rect.xh << " " << rect.yh << "\n";
+        }
+        std::cout << "\n";
     }
 
-    std::cout << "\n=== Final blockage rectangles ===\n";
-    for (std::size_t i = 0; i < rects.size(); ++i) {
-        const auto& r = rects[i];
-        std::cout << "R" << (i + 1) << ": "
-                  << r.xl << " " << r.yl << ", "
-                  << r.xh << " " << r.yh << "\n";
+    std::cout << "Generated:\n";
+    for (const auto& result : results) {
+        std::cout << "  " << layer_filename(result.layer) << "\n";
     }
-
-    std::cout << "\nGenerated:\n"
-              << "  A_original.svg\n"
-              << "  B_blockage.svg\n"
-              << "  AB_comparison.svg\n";
+    std::cout << "  BPV.svg\n";
 }
 
 int main(int argc, char* argv[]) {
@@ -806,28 +817,46 @@ int main(int argc, char* argv[]) {
         }
 
         Layout layout = parse_layout(argv[1]);
-        int m1_layer = m1_layer_number(layout);
-        Box bbox = layer_bbox(layout, m1_layer);
         std::vector<Pin> all_pins = identify_pins(layout);
-        std::vector<Pin> pins;
-        for (const auto& pin : all_pins) {
-            if (pin.layer == m1_layer) pins.push_back(pin);
+        std::vector<LayerResult> results;
+
+        for (const auto& layer : layout.layers) {
+            Box bbox;
+            if (!layer_bbox(layout, layer.number, bbox)) {
+                std::cerr << "Warning: layer " << layer.name
+                          << " has no polygons or rectangles; skipped.\n";
+                continue;
+            }
+
+            std::vector<Pin> pins;
+            for (const auto& pin : all_pins) {
+                if (pin.layer == layer.number) pins.push_back(pin);
+            }
+
+            MultiPolygon blockage = carve_blockage(bbox, pins, MIN_SPACING);
+            std::vector<Rect> rectangles = decompose_to_rectangles(
+                blockage, bbox, pins, MIN_SPACING);
+
+            results.push_back({layer, bbox, std::move(pins),
+                               std::move(blockage),
+                               std::move(rectangles)});
         }
 
-        write_svg_original("A_original.svg", layout, all_pins, bbox);
-        set_svg_viewbox("A_original.svg", 800, 800);
+        if (results.empty()) {
+            throw std::runtime_error(
+                "No declared layer contains polygons or rectangles.");
+        }
 
-        MultiPolygon final_blockage =
-            carve_blockage(bbox, pins, MIN_SPACING);
+        for (std::size_t i = 0; i < results.size(); ++i) {
+            std::string filename = layer_filename(results[i].layer);
+            write_layer_svg(filename, results[i]);
+            set_svg_viewbox(filename, 800, 800);
+        }
 
-        std::vector<Rect> rectangles =
-            decompose_to_rectangles(final_blockage, bbox, pins, MIN_SPACING);
+        write_bpv_svg("BPV.svg", results);
+        set_svg_viewbox("BPV.svg", 800, 800);
 
-        write_svg_final("B_blockage.svg", rectangles, pins, bbox);
-        set_svg_viewbox("B_blockage.svg", 800, 800);
-        write_comparison_svg("AB_comparison.svg");
-
-        print_results(bbox, pins, rectangles);
+        print_results(results);
     }
     catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";

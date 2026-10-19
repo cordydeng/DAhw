@@ -1,276 +1,189 @@
-# Project 1 README
+# Project 1：Multi-layer BPV Generator
 
-## 專案目的
+## 專案說明
 
-本專案會讀取一份簡化 layout 輸入檔，找出 M1 layer 上的 pin，並在 M1 的最小外框內產生 blockage rectangles。程式也會輸出 SVG 圖，方便檢查原始 layout、產生後的 blockage，以及兩者的比較。
+此程式讀取簡化的 layout 文字檔，依 metal layer 分別辨識 pins、計算安全間距，並產生 blockage rectangles。
 
-目前 spacing 設定為：
+每一層都會獨立運算，不會因為不同 layer 在相同 XY 位置重疊，就互相扣除 blockage。完成後程式會輸出：
+
+- 每個有效 layer 各一張 SVG，例如 `M1.svg`、`M2.svg`、`M3.svg`。
+- 所有 layer pins 聯集後產生的總體結果 `BPV.svg`。
+
+圖中不顯示座標或 pin 名稱。各 layer 的獨立 SVG 使用一致配色，其中 pins 統一使用 `BPV.svg` 中 M1 pins 的藍色；`BPV.svg` 的 blockage 使用灰色，pins 則依 metal layer 使用不同顏色。`BPV.svg` 會先合併所有 layers 的 pins 與 spacing keep-out，再從整體 bounding box 扣除，最後切成 rectangles。
+
+## 專案檔案
+
+```text
+project1/
+├── project1.cpp        # C++17 主程式
+├── M1.svg              # M1 layer 結果
+├── M2.svg              # M2 layer 結果
+├── M3.svg              # M3 layer 結果
+├── BPV.svg             # 所有 layer pins 聯集後的總體結果
+└── README.md            # 本文件
+```
+
+SVG 會建立在執行程式時的目前工作目錄。
+
+## 核心設定
+
+目前所有 layer 共用以下安全間距：
 
 ```cpp
 MIN_SPACING = 0.5
 ```
 
-也就是每個 pin 周圍會保留 0.5 的距離，不會被 blockage 覆蓋。
+也就是每個 pin 的邊界向外保留 `0.5`，blockage 不會進入該區域。輸入格式目前沒有提供各 layer 個別 spacing rule，因此尚未支援不同層使用不同間距。
 
-## 檔案架構
+## 處理架構
 
-```text
-project1/
-├── project1.cpp        # 主程式
-├── sample_input.txt    # 範例輸入
-├── A_original.svg      # 原始 layout 視覺化結果
-├── B_blockage.svg      # blockage rectangles 視覺化結果
-├── AB_comparison.svg   # 原始 layout 與 blockage 結果比較圖
-└── README.md           # 本說明文件
-```
+### 1. 解析 layout
 
-## 程式架構
+`parse_layout()` 讀取 layers、polygons、rectangles 與 text labels，並將幾何圖形轉成 Boost.Geometry polygons。
 
-`project1.cpp` 主要分成以下幾個部分：
+### 2. 辨識 pins
 
-### 1. 資料結構
+`identify_pins()` 會將 text label 與 shape 配對。必須同時符合：
 
-主要結構包含：
+1. text 與 shape 的 layer number 相同。
+2. text 座標位於 shape 內部或邊界上。
 
-```cpp
-Layer
-Shape
-TextLabel
-Layout
-Pin
-Rect
-```
+符合條件的 shape 會被視為該 text 名稱的 pin。若 text 沒有對應到任何 shape，程式會輸出 warning。
 
-用途如下：
+### 3. 逐 layer 獨立運算
 
-- `Layer`：記錄 layer 名稱與編號，例如 `M1 1`
-- `Shape`：儲存 polygon 或 rectangle 幾何資料
-- `TextLabel`：儲存 text/pin label 的名稱與座標
-- `Layout`：整份輸入檔解析後的資料集合
-- `Pin`：由 text label 對應到所在 shape 後得到的 pin
-- `Rect`：最後輸出的 blockage rectangle
+主程式依 `number_of_layers` 區段宣告的順序處理每個 layer：
 
-### 2. 輸入解析
+1. 收集該 layer 的 polygons 與 rectangles。
+2. 計算該 layer 自己的最小 bounding box。
+3. 只保留該 layer 的 pins。
+4. 將 pins 向外擴張 `MIN_SPACING`。
+5. 從 layer bounding box 扣除擴張後的 pin 區域。
+6. 將剩餘 blockage 分解成水平 rectangles。
 
-函式：
+沒有任何 polygon 或 rectangle 的 layer 會被略過，並在終端機顯示 warning。如果所有宣告的 layers 都沒有幾何資料，程式會以錯誤狀態結束。
 
-```cpp
-parse_layout()
-```
+### 4. Rectangle 分解
 
-會讀取輸入檔中的四個區塊：
+`decompose_to_rectangles()` 使用 layer bounding box 與擴張後 pin bounding boxes 的邊界建立切割線，再將 blockage 分割成 grid cells。
+
+只有完全位於 blockage 區域內的 cells 會被保留。相鄰 cells 只在同一個水平 y-band 內合併，因此輸出結果以水平 rectangles 為主。
+
+### 5. SVG 輸出
+
+`write_layer_svg()` 產生各 layer 的獨立結果圖，檔名取自輸入中的 layer name：
 
 ```text
-number_of_layers
-number_of_polygons
-number_of_rectangles
-number_of_texts
+M1 -> M1.svg
+M2 -> M2.svg
+M3 -> M3.svg
 ```
 
-polygon 會被轉成 Boost.Geometry 的 `Polygon`，rectangle 也會被轉成四邊形 polygon，方便後續做幾何運算。
+檔名中的非英數字元會轉換成 `_`，但 `-` 與 `_` 會保留。
 
-### 3. 找出 M1 與 Pin
+各 layer SVG 直接繪製完整的 blockage geometry，不顯示 rectangle 切割線，並在左上角標示 metal layer 名稱；只有總體 `BPV.svg` 會顯示切割後的 rectangles。
 
-相關函式：
+`write_bpv_svg()` 會合併所有 layer 的 pins，再輸出 `BPV.svg`：
 
-```cpp
-m1_layer_number()
-layer_bbox()
-identify_pins()
-```
+- 合併各 layer 的 bounding boxes，建立總體 bounding box。
+- 收集所有 layers 的 pins，並將每個 pin 向外擴張 `MIN_SPACING`。
+- 對所有擴張後的 pins 執行幾何聯集，重疊部分會合併成真正的 keep-out union shape，內部邊界會消失。
+- 從總體 bounding box 扣除 pin keep-out 聯集，得到總體 blockage。
+- 只使用 keep-out union shape 的外輪廓與洞口輪廓座標作為切割線，不保留各 pin 重疊區域中的原始邊界。
+- 忽略外擴輪廓上的共線中間點，避免原始 pin 頂點在外擴邊上形成多餘切線與細長 rectangles。
+- 根據這些聯集後的輪廓，將總體 blockage 分解成互不重疊的水平 rectangles。
+- 每個 rectangle 都保留邊框，因此可以看出總體結果的切割方式。
+- 所有 blockage 使用相同的灰色半透明填色。
+- Pins 依所屬 metal layer 使用不同顏色，並畫在 blockage 上方。
+- 各 layer 的獨立 SVG 使用一致的灰階配色，不依 layer 分色。
+- 左上角圖例會列出 `Overall blockage` 及各 metal layer 的 pin 顏色。
+- Pin 名稱與座標都不會顯示在 SVG 上。
 
-流程如下：
-
-1. 找出名稱為 `M1` 的 layer number。
-2. 計算 M1 上所有 polygon/rectangle 的最小外框。
-3. 檢查每個 text label 是否落在某個 shape 裡。
-4. 若 text label 落在 shape 裡，該 shape 會被視為 pin。
-
-### 4. 產生 blockage 區域
-
-相關函式：
-
-```cpp
-buffer_polygon()
-carve_blockage()
-```
-
-流程如下：
-
-1. 先建立一個大矩形，範圍是 M1 的最小外框。
-2. 對每個 pin 做 buffer，也就是向外擴張 `MIN_SPACING`。
-3. 從大矩形中扣掉這些擴張後的 pin 區域。
-4. 剩下的區域就是可以放 blockage 的區域。
-
-例如 pin C 原本是：
-
-```text
-(0, 20) -> (3, 24)
-```
-
-spacing 為 `0.5` 時，會保留大約：
-
-```text
-x: 0 ~ 3.5
-y: 19.5 ~ 24.5
-```
-
-這個區域不會產生 blockage。
-
-### 5. 切成 rectangles
-
-函式：
-
-```cpp
-decompose_to_rectangles()
-```
-
-切 rectangle 的流程目前以水平切割為主：
-
-1. 收集 M1 最小外框的邊界座標。
-2. 對每個 pin 向外擴張 `MIN_SPACING`。
-3. 只取外擴後 pin bounding box 的左/右/下/上邊界作為切割線。
-4. 用這些 x/y 座標切出許多小 grid cell。
-5. 保留完全位於 blockage 區域內的小格子。
-6. 由下往上逐層掃描每一個水平 y-band。
-7. 在同一個 y-band 裡，將連續可用的小格子往右合併。
-8. 不跨 y-band 往上合併，因此輸出的 rectangles 會以水平長條為主。
-9. 合併後輸出成 `Rect`。
-
-範例輸出：
-
-```text
-R1: 0.000 0.000, 40.000 9.500
-R2: 0.000 9.500, 37.500 13.500
-R3: 0.000 13.500, 40.000 19.500
-R4: 3.500 19.500, 40.000 24.500
-R5: 0.000 24.500, 40.000 45.500
-R6: 0.000 45.500, 12.500 50.000
-R7: 17.500 45.500, 40.000 50.000
-```
-
-切割線只來自 M1 最小外框與 pin 外擴後的邊界，不會再使用原始 pin 邊界切出額外薄片。
-
-### 6. SVG 輸出
-
-相關函式：
-
-```cpp
-write_svg_original()
-write_svg_final()
-write_comparison_svg()
-```
-
-程式會輸出三張 SVG：
-
-- `A_original.svg`：原始 layout
-- `B_blockage.svg`：產生後的 blockage rectangles
-- `AB_comparison.svg`：左右比較圖
-
-SVG 會標示：
-
-- 每個圖形的左下角座標
-- 每個圖形的右上角座標
-- pin label 的座標
+因此，只要任一 layer 在某處存在 pin keep-out，該位置就會從 `BPV.svg` 的總體 blockage 中扣除。
 
 ## 輸入格式
 
-範例：
-
 ```text
-number_of_layers 1
-M1  1
+number_of_layers <數量>
+<layer_name> <layer_number>
+...
 end_of_layer
 
-number_of_polygons  1
-1    0 0, 0 10, 10 10, 10 0, 0 0
+number_of_polygons <數量>
+<layer_number> <x1> <y1>, <x2> <y2>, ...
+...
 end_of_polygon
 
-number_of_rectangles 1
-1  0 20, 3 24
+number_of_rectangles <數量>
+<layer_number> <x1> <y1>, <x2> <y2>
+...
 end_of_rectangle
 
-number_of_texts 1
-1  C  1 21
+number_of_texts <數量>
+<layer_number> <pin_name> <x> <y>
+...
 end_of_text
 ```
 
-說明：
+空白行及以 `#` 開頭的註解行會被忽略。
 
-- `number_of_layers`：宣告 layer 資訊
-- `number_of_polygons`：宣告 polygon，每列格式為 `layer x1 y1, x2 y2, ...`
-- `number_of_rectangles`：宣告 rectangle，每列格式為 `layer xl yl, xh yh`
-- `number_of_texts`：宣告 text label，每列格式為 `layer name x y`
+### 多層範例
 
-如果 text label 的座標落在某個 shape 裡，該 shape 會被視為 pin。
+`multi_layer.txt` 定義 M1、M2、M3。所有 pins 都接觸各 layer bounding box 的左側或右側邊界，部分 pins 也會在不同 layer 的 XY 投影上重疊，用來確認：
 
-## 編譯方式
+- 每層 blockage 是否獨立產生。
+- 邊界 pin 的 spacing 是否會正確被 layer bounding box 截斷。
+- 同一 XY 位置上的不同 layer 是否互不干擾。
+- `BPV.svg` 是否正確合併三層 pins，並在聯集後產生總體 blockage rectangles。
 
-此程式使用 Boost.Geometry。若使用 MSYS2 UCRT64，可先安裝 Boost：
-
-```powershell
-C:\msys64\usr\bin\pacman.exe -S --needed mingw-w64-ucrt-x86_64-boost
-```
-
-編譯：
-
-```powershell
-cd C:\Users\User\Desktop\DAhw
-g++ project1\project1.cpp -std=c++17 -O2 -o project1\project1.exe
-```
-
-## 執行方式
-
-```powershell
-cd C:\Users\User\Desktop\DAhw\project1
-.\project1.exe sample_input.txt
-```
-
-執行後會在終端機輸出：
-
-- M1 最小外框
-- 找到的 pins
-- 最後產生的 blockage rectangles
-- 產生的 SVG 檔名
-
-也會產生或更新：
+執行後會產生：
 
 ```text
-A_original.svg
-B_blockage.svg
-AB_comparison.svg
+M1.svg
+M2.svg
+M3.svg
+BPV.svg
 ```
 
-## 輸出結果說明
+## 編譯與執行
 
-終端機中的 rectangle 格式為：
+在 `project1` 目錄中編譯 C++ 程式：
+
+```bash
+g++ project1.cpp -std=c++17 -O2 -I/opt/homebrew/include -o project1
+```
+
+用法：
+
+```bash
+./project1 <input.txt>
+```
+
+例如：
+
+```bash
+./project1 multi_layer.txt
+```
+
+## 終端機輸出
+
+每個 layer 都會分別列出：
+
+- Layer name 與 number。
+- 該 layer 的 bounding box。
+- Pins 及其 bounding boxes。
+- Blockage rectangles。
+
+Rectangle 格式如下：
 
 ```text
-R編號: xl yl, xh yh
+R<編號>: <xl> <yl>, <xh> <yh>
 ```
 
 例如：
 
 ```text
-R2: 0.000 9.500, 37.500 13.500
+R1: 0.000 0.000, 60.000 7.500
 ```
 
-代表第二個 blockage rectangle 的左下角是：
-
-```text
-(0, 9.5)
-```
-
-右上角是：
-
-```text
-(37.5, 13.5)
-```
-
-## 注意事項
-
-- 輸入檔必須定義 `M1` layer。
-- pin 是透過 text label 的座標判斷，不是只看名稱。
-- 目前 spacing 固定寫在程式中的 `MIN_SPACING`。
-- Boost.Geometry 的 SVG mapper 會將座標轉換到 800x800 的 SVG 畫布中。
-- SVG 上標示的是原始 layout 座標，不是 SVG 畫布座標。
+最後會列出本次產生的所有 layer SVG 與 `BPV.svg`。

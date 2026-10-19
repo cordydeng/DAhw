@@ -1,0 +1,35 @@
+# Multi-layer test input
+# Every pin touches a layer boundary. Pins also overlap in XY projection
+# across layers so the overall BPV union still contains visible cutouts.
+number_of_layers 3
+M1 1
+M2 2
+M3 3
+end_of_layer
+
+number_of_polygons 6
+1  0 0, 0 8, 8 8, 8 0, 0 0
+1 52 42, 52 50, 60 50, 60 42, 52 42
+2  0 42, 0 50, 8 50, 8 42, 0 42
+2 52 0, 52 8, 60 8, 60 0, 52 0
+3  0 0, 0 6, 6 6, 6 0, 0 0
+3 54 44, 54 50, 60 50, 60 44, 54 44
+end_of_polygon
+
+number_of_rectangles 6
+1  0 15, 14 30
+1 46  6, 60 18
+2  0 19, 12 34
+2 48 10, 60 22
+3  0 23, 10 38
+3 50 14, 60 26
+end_of_rectangle
+
+number_of_texts 6
+1 DATA_IN   3 18
+1 DATA_OUT 56  9
+2 CTRL      4 24
+2 ENABLE   55 15
+3 CLK       5 30
+3 VDD      54 21
+end_of_text
