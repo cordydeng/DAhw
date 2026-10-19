@@ -16,9 +16,7 @@
 ```text
 project1/
 ├── project1.cpp        # C++17 主程式
-├── M1.svg              # M1 layer 結果
-├── M2.svg              # M2 layer 結果
-├── M3.svg              # M3 layer 結果
+├── M*.svg              # M* layer 結果
 ├── BPV.svg             # 所有 layer pins 聯集後的總體結果
 └── README.md            # 本文件
 ```
@@ -151,7 +149,7 @@ BPV.svg
 在 `project1` 目錄中編譯 C++ 程式：
 
 ```bash
-g++ project1.cpp -std=c++17 -O2 -I/opt/homebrew/include -o project1
+g++ project1.cpp -std=c++17 -O2 -o project1
 ```
 
 用法：
