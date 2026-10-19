@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -63,6 +64,8 @@ struct Rect {
 struct LayerResult {
     Layer layer;
     Box bbox;
+    std::vector<Polygon> blocks;
+    MultiPolygon block_overlaps;
     std::vector<Pin> pins;
     MultiPolygon blockage;
     std::vector<Rect> rectangles;
@@ -490,6 +493,20 @@ static std::string layer_filename(const Layer& layer) {
     return name + ".svg";
 }
 
+static void remove_existing_svg_files() {
+    for (const auto& entry : std::filesystem::directory_iterator(
+             std::filesystem::current_path())) {
+        if (!entry.is_regular_file()) continue;
+
+        std::string extension = entry.path().extension().string();
+        std::transform(extension.begin(), extension.end(), extension.begin(),
+                       [](unsigned char ch) {
+                           return static_cast<char>(std::tolower(ch));
+                       });
+        if (extension == ".svg") std::filesystem::remove(entry.path());
+    }
+}
+
 static PinStyle pin_style(std::size_t layer_index) {
     static const std::vector<PinStyle> styles = {
         {"#4779bf", "#315e9d"},
@@ -522,6 +539,26 @@ static Polygon box_polygon(const Box& bbox) {
         bg::get<bg::max_corner, 1>(bbox));
 }
 
+static MultiPolygon find_block_overlaps(const std::vector<Polygon>& blocks) {
+    MultiPolygon overlaps;
+
+    for (std::size_t i = 0; i < blocks.size(); ++i) {
+        for (std::size_t j = i + 1; j < blocks.size(); ++j) {
+            MultiPolygon intersection;
+            bg::intersection(blocks[i], blocks[j], intersection);
+
+            for (auto& polygon : intersection) {
+                bg::correct(polygon);
+                if (std::abs(bg::area(polygon)) > EPS) {
+                    overlaps.push_back(std::move(polygon));
+                }
+            }
+        }
+    }
+
+    return overlaps;
+}
+
 static void write_layer_svg(const std::string& filename,
                             const LayerResult& result) {
     std::ofstream svg(filename);
@@ -532,6 +569,8 @@ static void write_layer_svg(const std::string& filename,
     Box display_bbox = result.bbox;
 
     for (const auto& polygon : result.blockage) mapper.add(polygon);
+    for (const auto& block : result.blocks) mapper.add(block);
+    for (const auto& overlap : result.block_overlaps) mapper.add(overlap);
     for (const auto& pin : result.pins) mapper.add(pin.shape);
 
     Polygon border = box_polygon(result.bbox);
@@ -541,11 +580,21 @@ static void write_layer_svg(const std::string& filename,
 
     const std::string blockage_style =
         "fill:#d0cece;fill-opacity:0.68;stroke:#505050;stroke-width:1";
+    const std::string block_style =
+        "fill:#9cc5df;fill-opacity:0.72;stroke:#2e6f95;stroke-width:1.2";
+    const std::string overlap_style =
+        "fill:#6399bd;fill-opacity:0.82;stroke:none";
     const std::string pin_style =
         "fill:#4779bf;fill-opacity:0.78;stroke:#315e9d;stroke-width:1";
 
     for (const auto& polygon : result.blockage) {
         mapper.map(polygon, blockage_style);
+    }
+    for (const auto& block : result.blocks) {
+        mapper.map(block, block_style);
+    }
+    for (const auto& overlap : result.block_overlaps) {
+        mapper.map(overlap, overlap_style);
     }
     for (const auto& pin : result.pins) {
         mapper.map(pin.shape, pin_style);
@@ -553,11 +602,23 @@ static void write_layer_svg(const std::string& filename,
 
     mapper.map(border, "fill:none;stroke:#404040;stroke-width:1.5");
     svg << "<g font-family=\"sans-serif\" font-size=\"15\">\n"
-        << "<rect x=\"10\" y=\"10\" width=\"180\" height=\"30\""
+        << "<rect x=\"10\" y=\"10\" width=\"190\" height=\"126\""
         << " rx=\"5\" fill=\"white\" fill-opacity=\"0.88\""
         << " stroke=\"#555\"/>\n"
         << "<text x=\"20\" y=\"30\" fill=\"#202124\">Metal layer: "
         << escape_xml(result.layer.name) << "</text>\n"
+        << "<rect x=\"20\" y=\"43\" width=\"16\" height=\"12\""
+        << " fill=\"#d0cece\" stroke=\"#505050\"/>\n"
+        << "<text x=\"44\" y=\"54\" fill=\"#202124\">Blockage</text>\n"
+        << "<rect x=\"20\" y=\"67\" width=\"16\" height=\"12\""
+        << " fill=\"#9cc5df\" stroke=\"#2e6f95\"/>\n"
+        << "<text x=\"44\" y=\"78\" fill=\"#202124\">Existing block</text>\n"
+        << "<rect x=\"20\" y=\"91\" width=\"16\" height=\"12\""
+        << " fill=\"#6399bd\" stroke=\"#2e6f95\"/>\n"
+        << "<text x=\"44\" y=\"102\" fill=\"#202124\">Block overlap</text>\n"
+        << "<rect x=\"20\" y=\"115\" width=\"16\" height=\"12\""
+        << " fill=\"#4779bf\" stroke=\"#315e9d\"/>\n"
+        << "<text x=\"44\" y=\"126\" fill=\"#202124\">Pin</text>\n"
         << "</g>\n";
 }
 
@@ -833,11 +894,21 @@ int main(int argc, char* argv[]) {
                 if (pin.layer == layer.number) pins.push_back(pin);
             }
 
+            std::vector<Polygon> blocks;
+            for (const auto& shape : layout.polygons) {
+                if (shape.layer == layer.number) blocks.push_back(shape.poly);
+            }
+            for (const auto& shape : layout.rectangles) {
+                if (shape.layer == layer.number) blocks.push_back(shape.poly);
+            }
+            MultiPolygon block_overlaps = find_block_overlaps(blocks);
+
             MultiPolygon blockage = carve_blockage(bbox, pins, MIN_SPACING);
             std::vector<Rect> rectangles = decompose_to_rectangles(
                 blockage, bbox, pins, MIN_SPACING);
 
-            results.push_back({layer, bbox, std::move(pins),
+            results.push_back({layer, bbox, std::move(blocks),
+                               std::move(block_overlaps), std::move(pins),
                                std::move(blockage),
                                std::move(rectangles)});
         }
@@ -846,6 +917,8 @@ int main(int argc, char* argv[]) {
             throw std::runtime_error(
                 "No declared layer contains polygons or rectangles.");
         }
+
+        remove_existing_svg_files();
 
         for (std::size_t i = 0; i < results.size(); ++i) {
             std::string filename = layer_filename(results[i].layer);
