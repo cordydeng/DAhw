@@ -44,11 +44,22 @@ struct Layout {
 };
 
 struct Violation {
+    int check_id = 0;
     int source_id = 0;
     int target_id = 0;
     std::string end_name;
     std::string reason;
     Box region;
+};
+
+struct EolCheck {
+    int id = 0;
+    std::string end_name;
+    std::vector<Box> regions;
+};
+
+struct DrcResult {
+    std::vector<Violation> violations;
 };
 
 static std::string trim(const std::string& s) {
@@ -104,16 +115,6 @@ static Shape make_shape(int id, int layer, const Polygon& poly) {
         throw std::runtime_error("Invalid polygon geometry.");
     }
     return {id, layer, corrected, polygon_box(corrected)};
-}
-
-static void append_clean_polygons(const MultiPolygon& input,
-                                  MultiPolygon& output) {
-    for (auto poly : input) {
-        bg::correct(poly);
-        if (std::abs(bg::area(poly)) > EPS) {
-            output.push_back(poly);
-        }
-    }
 }
 
 static std::vector<Shape> merge_same_layer_shapes(const std::vector<Shape>& shapes,
@@ -281,91 +282,162 @@ static bool shape_overlaps_region(const Shape& shape, const Box& region) {
 }
 
 static void add_violation(std::vector<Violation>& violations,
+                          int check_id,
                           const Shape& source,
                           const Shape& target,
                           const std::string& end_name,
                           const std::string& reason,
                           const Box& region) {
-    violations.push_back({source.id, target.id, end_name, reason, region});
+    violations.push_back({check_id, source.id, target.id, end_name, reason, region});
 }
 
-static void check_region(const std::vector<Shape>& shapes,
+static int check_region(const std::vector<Shape>& shapes,
                          const Shape& source,
+                         int check_id,
                          const std::string& end_name,
                          const std::string& reason,
                          const Box& region,
                          std::vector<Violation>& violations) {
+    int count = 0;
     for (const auto& target : shapes) {
         if (target.id == source.id || target.layer != source.layer) continue;
         if (shape_overlaps_region(target, region)) {
-            add_violation(violations, source, target, end_name, reason, region);
+            add_violation(violations, check_id, source, target, end_name, reason, region);
+            ++count;
+        }
+    }
+    return count;
+}
+
+static Box normalized_box(double x1, double y1, double x2, double y2) {
+    return Box(Point(std::min(x1, x2), std::min(y1, y2)),
+               Point(std::max(x1, x2), std::max(y1, y2)));
+}
+
+static double point_distance(const Point& a, const Point& b) {
+    return std::hypot(bg::get<0>(a) - bg::get<0>(b),
+                      bg::get<1>(a) - bg::get<1>(b));
+}
+
+static void remove_collinear_vertices(std::vector<Point>& vertices) {
+    bool removed = true;
+    while (removed && vertices.size() >= 3) {
+        removed = false;
+        for (std::size_t i = 0; i < vertices.size(); ++i) {
+            const Point& a = vertices[(i + vertices.size() - 1) % vertices.size()];
+            const Point& b = vertices[i];
+            const Point& c = vertices[(i + 1) % vertices.size()];
+            const double abx = bg::get<0>(b) - bg::get<0>(a);
+            const double aby = bg::get<1>(b) - bg::get<1>(a);
+            const double bcx = bg::get<0>(c) - bg::get<0>(b);
+            const double bcy = bg::get<1>(c) - bg::get<1>(b);
+            const double cross = abx * bcy - aby * bcx;
+            const double dot = abx * bcx + aby * bcy;
+            if (std::abs(cross) <= EPS && dot > EPS) {
+                vertices.erase(vertices.begin() + i);
+                removed = true;
+                break;
+            }
         }
     }
 }
 
-static std::vector<Violation> check_eol(const std::vector<Shape>& shapes) {
-    std::vector<Violation> violations;
+// Boost's corrected outer rings are clockwise. For a clockwise edge, the
+// polygon interior is on its right and the outward normal is on its left.
+static DrcResult check_eol(const std::vector<Shape>& shapes) {
+    DrcResult result;
+    int next_check_id = 1;
 
     for (const auto& shape : shapes) {
-        const double w = maxx(shape.bbox) - minx(shape.bbox);
-        const double h = maxy(shape.bbox) - miny(shape.bbox);
-
-        if (h <= EOL_WIDTH + EPS && w > EOL_WIDTH + EPS) {
-            const Box left_front(Point(minx(shape.bbox) - EOL_SPACE, miny(shape.bbox)),
-                                 Point(minx(shape.bbox), maxy(shape.bbox)));
-            const Box right_front(Point(maxx(shape.bbox), miny(shape.bbox)),
-                                  Point(maxx(shape.bbox) + EOL_SPACE, maxy(shape.bbox)));
-            check_region(shapes, shape, "left", "EOL spacing < 1.0", left_front, violations);
-            check_region(shapes, shape, "right", "EOL spacing < 1.0", right_front, violations);
-
-            const double lx0 = minx(shape.bbox);
-            const double lx1 = std::min(maxx(shape.bbox), minx(shape.bbox) + EOL_PARALLEL);
-            const double rx0 = std::max(minx(shape.bbox), maxx(shape.bbox) - EOL_PARALLEL);
-            const double rx1 = maxx(shape.bbox);
-
-            check_region(shapes, shape, "left", "side halo violation",
-                         Box(Point(lx0, maxy(shape.bbox)), Point(lx1, maxy(shape.bbox) + EOL_WITHIN)),
-                         violations);
-            check_region(shapes, shape, "left", "side halo violation",
-                         Box(Point(lx0, miny(shape.bbox) - EOL_WITHIN), Point(lx1, miny(shape.bbox))),
-                         violations);
-            check_region(shapes, shape, "right", "side halo violation",
-                         Box(Point(rx0, maxy(shape.bbox)), Point(rx1, maxy(shape.bbox) + EOL_WITHIN)),
-                         violations);
-            check_region(shapes, shape, "right", "side halo violation",
-                         Box(Point(rx0, miny(shape.bbox) - EOL_WITHIN), Point(rx1, miny(shape.bbox))),
-                         violations);
+        std::vector<Point> vertices(shape.poly.outer().begin(), shape.poly.outer().end());
+        if (vertices.size() > 1 && point_distance(vertices.front(), vertices.back()) <= EPS) {
+            vertices.pop_back();
         }
+        remove_collinear_vertices(vertices);
 
-        if (w <= EOL_WIDTH + EPS && h > EOL_WIDTH + EPS) {
-            const Box bottom_front(Point(minx(shape.bbox), miny(shape.bbox) - EOL_SPACE),
-                                   Point(maxx(shape.bbox), miny(shape.bbox)));
-            const Box top_front(Point(minx(shape.bbox), maxy(shape.bbox)),
-                                Point(maxx(shape.bbox), maxy(shape.bbox) + EOL_SPACE));
-            check_region(shapes, shape, "bottom", "EOL spacing < 1.0", bottom_front, violations);
-            check_region(shapes, shape, "top", "EOL spacing < 1.0", top_front, violations);
+        // Classify actual boundary edges before looking for neighboring shapes.
+        const std::size_t n = vertices.size();
+        for (std::size_t i = 0; i < n; ++i) {
+            const Point& p0 = vertices[i];
+            const Point& p1 = vertices[(i + 1) % n];
+            const Point& previous = vertices[(i + n - 1) % n];
+            const Point& next = vertices[(i + 2) % n];
+            const double dx = bg::get<0>(p1) - bg::get<0>(p0);
+            const double dy = bg::get<1>(p1) - bg::get<1>(p0);
+            const bool vertical = std::abs(dx) <= EPS && std::abs(dy) > EPS;
+            const bool horizontal = std::abs(dy) <= EPS && std::abs(dx) > EPS;
+            if (!vertical && !horizontal) continue;
 
-            const double by0 = miny(shape.bbox);
-            const double by1 = std::min(maxy(shape.bbox), miny(shape.bbox) + EOL_PARALLEL);
-            const double ty0 = std::max(miny(shape.bbox), maxy(shape.bbox) - EOL_PARALLEL);
-            const double ty1 = maxy(shape.bbox);
+            const double edge_length = std::hypot(dx, dy);
+            if (edge_length > EOL_WIDTH + EPS) continue;
 
-            check_region(shapes, shape, "bottom", "side halo violation",
-                         Box(Point(maxx(shape.bbox), by0), Point(maxx(shape.bbox) + EOL_WITHIN, by1)),
-                         violations);
-            check_region(shapes, shape, "bottom", "side halo violation",
-                         Box(Point(minx(shape.bbox) - EOL_WITHIN, by0), Point(minx(shape.bbox), by1)),
-                         violations);
-            check_region(shapes, shape, "top", "side halo violation",
-                         Box(Point(maxx(shape.bbox), ty0), Point(maxx(shape.bbox) + EOL_WITHIN, ty1)),
-                         violations);
-            check_region(shapes, shape, "top", "side halo violation",
-                         Box(Point(minx(shape.bbox) - EOL_WITHIN, ty0), Point(minx(shape.bbox), ty1)),
-                         violations);
+            const double ox = vertical ? (dy > 0.0 ? -1.0 : 1.0) : 0.0;
+            const double oy = horizontal ? (dx > 0.0 ? 1.0 : -1.0) : 0.0;
+            const double ix = -ox;
+            const double iy = -oy;
+            const double tx = dx / edge_length;
+            const double ty = dy / edge_length;
+            const double prev_dx = bg::get<0>(previous) - bg::get<0>(p0);
+            const double prev_dy = bg::get<1>(previous) - bg::get<1>(p0);
+            const double next_dx = bg::get<0>(next) - bg::get<0>(p1);
+            const double next_dy = bg::get<1>(next) - bg::get<1>(p1);
+            const double prev_inward = prev_dx * ix + prev_dy * iy;
+            const double next_inward = next_dx * ix + next_dy * iy;
+            const double prev_along_edge = prev_dx * tx + prev_dy * ty;
+            const double next_along_edge = next_dx * tx + next_dy * ty;
+            if (prev_inward <= EPS || next_inward <= EPS ||
+                std::abs(prev_along_edge) > EPS || std::abs(next_along_edge) > EPS) {
+                continue;
+            }
+
+            EolCheck check;
+            check.id = next_check_id++;
+            if (ox < 0.0) check.end_name = "left";
+            else if (ox > 0.0) check.end_name = "right";
+            else if (oy < 0.0) check.end_name = "bottom";
+            else check.end_name = "top";
+
+            if (vertical) {
+                const double x = bg::get<0>(p0);
+                const double y0 = std::min(bg::get<1>(p0), bg::get<1>(p1));
+                const double y1 = std::max(bg::get<1>(p0), bg::get<1>(p1));
+                check.regions.push_back(normalized_box(x, y0, x + ox * EOL_SPACE, y1));
+                const double lower_parallel = (bg::get<1>(p0) < bg::get<1>(p1))
+                                                  ? prev_inward : next_inward;
+                const double upper_parallel = (bg::get<1>(p0) > bg::get<1>(p1))
+                                                  ? prev_inward : next_inward;
+                check.regions.push_back(normalized_box(
+                    x, y0 - EOL_WITHIN,
+                    x + ix * std::min(EOL_PARALLEL, lower_parallel), y0));
+                check.regions.push_back(normalized_box(
+                    x, y1,
+                    x + ix * std::min(EOL_PARALLEL, upper_parallel), y1 + EOL_WITHIN));
+            } else {
+                const double y = bg::get<1>(p0);
+                const double x0 = std::min(bg::get<0>(p0), bg::get<0>(p1));
+                const double x1 = std::max(bg::get<0>(p0), bg::get<0>(p1));
+                check.regions.push_back(normalized_box(x0, y, x1, y + oy * EOL_SPACE));
+                const double left_parallel = (bg::get<0>(p0) < bg::get<0>(p1))
+                                                 ? prev_inward : next_inward;
+                const double right_parallel = (bg::get<0>(p0) > bg::get<0>(p1))
+                                                  ? prev_inward : next_inward;
+                check.regions.push_back(normalized_box(
+                    x0 - EOL_WITHIN, y,
+                    x0, y + iy * std::min(EOL_PARALLEL, left_parallel)));
+                check.regions.push_back(normalized_box(
+                    x1, y,
+                    x1 + EOL_WITHIN, y + iy * std::min(EOL_PARALLEL, right_parallel)));
+            }
+
+            for (std::size_t j = 0; j < check.regions.size(); ++j) {
+                const std::string reason = j == 0 ? "EOL spacing < 1.0"
+                                                  : "side halo violation";
+                check_region(shapes, shape, check.id, check.end_name, reason,
+                             check.regions[j], result.violations);
+            }
         }
     }
-
-    return violations;
+    return result;
 }
 
 static void expand_bbox(Box& dst, const Box& src, bool& initialized) {
@@ -557,8 +629,8 @@ static void write_drc_svg(const std::string& filename,
     write_svg_header(svg, "EOL DRC result");
     svg << "<text class=\"title\" x=\"40\" y=\"42\">EOL DRC Result</text>\n";
     svg << "<text class=\"sub\" x=\"40\" y=\"66\">"
-        << violations.size()
-        << " violation(s), eolWidth=0.6, eolSpace=1.0, eolParallel=0.7, eolWithin=0.4 um</text>\n";
+        << violations.size() << " violation(s), eolWidth=0.6, eolSpace=1.0, "
+        << "eolParallel=0.7, eolWithin=0.4 um</text>\n";
     write_axes(svg, view);
     write_shapes(svg, shapes, view);
     for (const auto& v : violations) {
@@ -588,24 +660,18 @@ int main(int argc, char* argv[]) {
 
         Layout layout = parse_layout(argv[1]);
         const int m1 = m1_layer_number(layout);
-        std::vector<Shape> m1_shapes;
-        for (const auto& shape : layout.shapes) {
-            if (shape.layer == m1) m1_shapes.push_back(shape);
-        }
         std::vector<Shape> merged_m1_shapes = merge_same_layer_shapes(layout.shapes, m1);
 
-        const auto violations = check_eol(merged_m1_shapes);
+        const DrcResult drc = check_eol(merged_m1_shapes);
         write_clean_metal_svg("metal_clean.svg", merged_m1_shapes);
-        write_drc_svg("eol_drc.svg", merged_m1_shapes, violations);
+        write_drc_svg("eol_drc.svg", merged_m1_shapes, drc.violations);
 
         std::cout << std::fixed << std::setprecision(3);
-        std::cout << "Original M1 shape count: " << m1_shapes.size() << "\n";
-        std::cout << "Merged M1 shape count: " << merged_m1_shapes.size() << "\n";
-        std::cout << "EOL violations: " << violations.size() << "\n";
-        for (std::size_t i = 0; i < violations.size(); ++i) {
-            const auto& v = violations[i];
+        std::cout << "EOL violations: " << drc.violations.size() << "\n";
+        for (std::size_t i = 0; i < drc.violations.size(); ++i) {
+            const auto& v = drc.violations[i];
             std::cout << "V" << (i + 1)
-                      << ": shape " << v.source_id
+                      << " (E" << v.check_id << "): shape " << v.source_id
                       << " " << v.end_name
                       << " end vs shape " << v.target_id
                       << " -- " << v.reason
@@ -613,8 +679,6 @@ int main(int argc, char* argv[]) {
             print_box(v.region);
             std::cout << "\n";
         }
-        std::cout << "Generated: metal_clean.svg\n";
-        std::cout << "Generated: eol_drc.svg\n";
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";
         return 1;
