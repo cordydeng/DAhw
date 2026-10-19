@@ -81,7 +81,7 @@ M3 -> M3.svg
 
 檔名中的非英數字元會轉換成 `_`，但 `-` 與 `_` 會保留。
 
-各 layer SVG 直接繪製完整的 blockage geometry，不顯示 rectangle 切割線，並在左上角標示 metal layer 名稱；只有總體 `BPV.svg` 會顯示切割後的 rectangles。
+各 layer SVG 直接繪製完整的 blockage geometry，不顯示 rectangle 切割線。圖中灰色為 blockage、淡藍色為輸入檔中該 layer 原有的 polygons 與 rectangles；原始 blocks 的重疊區會用較深的同色系藍色標示，深藍色則為 pins。左上角圖例會標示各元素。只有總體 `BPV.svg` 會顯示切割後的 rectangles。
 
 `write_bpv_svg()` 會合併所有 layer 的 pins，再輸出 `BPV.svg`：
 
@@ -129,11 +129,12 @@ end_of_text
 
 ### 多層範例
 
-`multi_layer.txt` 定義 M1、M2、M3。所有 pins 都接觸各 layer bounding box 的左側或右側邊界，部分 pins 也會在不同 layer 的 XY 投影上重疊，用來確認：
+`multi_layer.txt` 定義 M1、M2、M3。所有 pins 都接觸各 layer bounding box 的左側或右側邊界，部分 pins 也會在不同 layer 的 XY 投影上重疊。M1 另外包含一個 polygon 與一個不帶 text label 的 rectangle，它們在 `(28, 28) -> (34, 36)` 重疊，用來確認：
 
 - 每層 blockage 是否獨立產生。
 - 邊界 pin 的 spacing 是否會正確被 layer bounding box 截斷。
 - 同一 XY 位置上的不同 layer 是否互不干擾。
+- 同一 layer 的原始 block 重疊區是否會以較深藍色顯示。
 - `BPV.svg` 是否正確合併三層 pins，並在聯集後產生總體 blockage rectangles。
 
 執行後會產生：
@@ -164,6 +165,8 @@ g++ project1.cpp -std=c++17 -O2 -I/opt/homebrew/include -o project1
 ```bash
 ./project1 multi_layer.txt
 ```
+
+每次開始輸出圖檔前，程式會先刪除目前執行目錄中所有 `.svg` 檔，再產生本次的 layer SVG 與 `BPV.svg`。請在專案輸出資料夾中執行程式，避免刪除其他需要保留的 SVG。
 
 ## 終端機輸出
 
