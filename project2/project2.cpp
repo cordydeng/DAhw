@@ -23,7 +23,6 @@ using Box = bg::model::box<Point>;
 static constexpr double EPS = 1e-9;
 static constexpr double EOL_WIDTH = 0.6;
 static constexpr double EOL_SPACE = 1.0;
-static constexpr double EOL_PARALLEL = 0.7;
 static constexpr double EOL_WITHIN = 0.4;
 
 struct Layer {
@@ -52,13 +51,13 @@ struct Violation {
     Box region;
 };
 
-struct EolCheck {
-    int id = 0;
-    std::string end_name;
-    std::vector<Box> regions;
-};
-
 struct DrcResult {
+    struct EolEdge {
+        int id;
+        Point start;
+        Point end;
+    };
+    std::vector<EolEdge> edges;
     std::vector<Violation> violations;
 };
 
@@ -390,51 +389,25 @@ static DrcResult check_eol(const std::vector<Shape>& shapes) {
                 continue;
             }
 
-            EolCheck check;
-            check.id = next_check_id++;
-            if (ox < 0.0) check.end_name = "left";
-            else if (ox > 0.0) check.end_name = "right";
-            else if (oy < 0.0) check.end_name = "bottom";
-            else check.end_name = "top";
+            const int check_id = next_check_id++;
+            result.edges.push_back({check_id, p0, p1});
+            std::string end_name;
+            if (ox < 0.0) end_name = "left";
+            else if (ox > 0.0) end_name = "right";
+            else if (oy < 0.0) end_name = "bottom";
+            else end_name = "top";
 
-            if (vertical) {
-                const double x = bg::get<0>(p0);
-                const double y0 = std::min(bg::get<1>(p0), bg::get<1>(p1));
-                const double y1 = std::max(bg::get<1>(p0), bg::get<1>(p1));
-                check.regions.push_back(normalized_box(x, y0, x + ox * EOL_SPACE, y1));
-                const double lower_parallel = (bg::get<1>(p0) < bg::get<1>(p1))
-                                                  ? prev_inward : next_inward;
-                const double upper_parallel = (bg::get<1>(p0) > bg::get<1>(p1))
-                                                  ? prev_inward : next_inward;
-                check.regions.push_back(normalized_box(
-                    x, y0 - EOL_WITHIN,
-                    x + ix * std::min(EOL_PARALLEL, lower_parallel), y0));
-                check.regions.push_back(normalized_box(
-                    x, y1,
-                    x + ix * std::min(EOL_PARALLEL, upper_parallel), y1 + EOL_WITHIN));
-            } else {
-                const double y = bg::get<1>(p0);
-                const double x0 = std::min(bg::get<0>(p0), bg::get<0>(p1));
-                const double x1 = std::max(bg::get<0>(p0), bg::get<0>(p1));
-                check.regions.push_back(normalized_box(x0, y, x1, y + oy * EOL_SPACE));
-                const double left_parallel = (bg::get<0>(p0) < bg::get<0>(p1))
-                                                 ? prev_inward : next_inward;
-                const double right_parallel = (bg::get<0>(p0) > bg::get<0>(p1))
-                                                  ? prev_inward : next_inward;
-                check.regions.push_back(normalized_box(
-                    x0 - EOL_WITHIN, y,
-                    x0, y + iy * std::min(EOL_PARALLEL, left_parallel)));
-                check.regions.push_back(normalized_box(
-                    x1, y,
-                    x1 + EOL_WITHIN, y + iy * std::min(EOL_PARALLEL, right_parallel)));
-            }
-
-            for (std::size_t j = 0; j < check.regions.size(); ++j) {
-                const std::string reason = j == 0 ? "EOL spacing < 1.0"
-                                                  : "side halo violation";
-                check_region(shapes, shape, check.id, check.end_name, reason,
-                             check.regions[j], result.violations);
-            }
+            // Fig. 2(a): extend forward by eolSpace and past both endpoints
+            // along the edge by eolWithin. This does not extend behind the EOL.
+            const double margin_x = horizontal ? EOL_WITHIN : 0.0;
+            const double margin_y = vertical ? EOL_WITHIN : 0.0;
+            const Box region = normalized_box(
+                std::min(bg::get<0>(p0), bg::get<0>(p1)) + std::min(0.0, ox * EOL_SPACE) - margin_x,
+                std::min(bg::get<1>(p0), bg::get<1>(p1)) + std::min(0.0, oy * EOL_SPACE) - margin_y,
+                std::max(bg::get<0>(p0), bg::get<0>(p1)) + std::max(0.0, ox * EOL_SPACE) + margin_x,
+                std::max(bg::get<1>(p0), bg::get<1>(p1)) + std::max(0.0, oy * EOL_SPACE) + margin_y);
+            check_region(shapes, shape, check_id, end_name, "EOL spacing < 1.0",
+                         region, result.violations);
         }
     }
     return result;
@@ -526,14 +499,18 @@ static double sy(const SvgView& view, double y) {
 
 static std::string polygon_path(const Polygon& poly, const SvgView& view) {
     std::ostringstream path;
-    bool first = true;
-    for (const auto& p : poly.outer()) {
-        path << (first ? "M " : " L ")
-             << sx(view, bg::get<0>(p)) << " "
-             << sy(view, bg::get<1>(p));
-        first = false;
-    }
-    path << " Z";
+    const auto append_ring = [&](const auto& ring) {
+        bool first = true;
+        for (const auto& p : ring) {
+            path << (first ? "M " : " L ")
+                 << sx(view, bg::get<0>(p)) << " "
+                 << sy(view, bg::get<1>(p));
+            first = false;
+        }
+        path << " Z ";
+    };
+    append_ring(poly.outer());
+    for (const auto& ring : poly.inners()) append_ring(ring);
     return path.str();
 }
 
@@ -549,8 +526,11 @@ static void write_svg_header(std::ostream& svg, const std::string& title) {
         << ".axis{stroke:#374151;stroke-width:1.2}"
         << ".grid{stroke:#e5e7eb;stroke-width:1}"
         << ".tick{font:12px Arial,sans-serif;fill:#4b5563}"
-        << ".metal{fill:#8ecae6;stroke:#145f86;stroke-width:1.6;fill-opacity:.9}"
-        << ".viol{fill:#ef4444;stroke:#991b1b;stroke-width:1.8;fill-opacity:.34}"
+        << ".metal{fill:#8ecae6;stroke:#145f86;stroke-width:1.6;fill-opacity:.9;fill-rule:evenodd}"
+        << ".check{fill:#ff8800;stroke:#e67300;stroke-width:1.8;fill-opacity:.6}"
+        << ".viol{fill:#ff0000;stroke:#d90000;stroke-width:1.8;fill-opacity:.9}"
+        << ".eol{stroke:#166534;stroke-width:3.5;stroke-linecap:round}"
+        << ".metal-label{font:700 13px Arial,sans-serif;fill:#111827;paint-order:stroke;stroke:#fff;stroke-width:3;stroke-linejoin:round;pointer-events:none}"
         << ".label{font:13px Arial,sans-serif;fill:#111827}"
         << ".legend{font:14px Arial,sans-serif;fill:#111827}";
     svg << "\n]]></style>\n";
@@ -595,9 +575,16 @@ static void write_shapes(std::ostream& svg,
                          const SvgView& view) {
     for (const auto& shape : shapes) {
         svg << "<path class=\"metal\" d=\"" << polygon_path(shape.poly, view) << "\"/>\n";
+    }
+}
+
+static void write_shape_labels(std::ostream& svg,
+                               const std::vector<Shape>& shapes,
+                               const SvgView& view) {
+    for (const auto& shape : shapes) {
         const double cx = (minx(shape.bbox) + maxx(shape.bbox)) * 0.5;
         const double cy = (miny(shape.bbox) + maxy(shape.bbox)) * 0.5;
-        svg << "<text class=\"label\" x=\"" << sx(view, cx) << "\" y=\"" << sy(view, cy) + 4
+        svg << "<text class=\"metal-label\" x=\"" << sx(view, cx) << "\" y=\"" << sy(view, cy) + 4
             << "\" text-anchor=\"middle\">M" << shape.id << "</text>\n";
     }
 }
@@ -607,13 +594,13 @@ static void write_clean_metal_svg(const std::string& filename,
     std::ofstream svg(filename);
     if (!svg) throw std::runtime_error("Cannot write SVG: " + filename);
 
-    const std::vector<Violation> no_violations;
-    const SvgView view = make_view(shapes, no_violations);
+    const SvgView view = make_view(shapes, {});
     write_svg_header(svg, "Clean M1 metal layout");
     svg << "<text class=\"title\" x=\"40\" y=\"42\">Clean M1 Metal Layout</text>\n";
     svg << "<text class=\"sub\" x=\"40\" y=\"66\">Input layout only, no DRC markers</text>\n";
     write_axes(svg, view);
     write_shapes(svg, shapes, view);
+    write_shape_labels(svg, shapes, view);
     svg << "<rect x=\"760\" y=\"34\" width=\"20\" height=\"12\" class=\"metal\"/>\n";
     svg << "<text class=\"legend\" x=\"790\" y=\"45\">M1 metal</text>\n";
     svg << "</svg>\n";
@@ -621,28 +608,69 @@ static void write_clean_metal_svg(const std::string& filename,
 
 static void write_drc_svg(const std::string& filename,
                           const std::vector<Shape>& shapes,
-                          const std::vector<Violation>& violations) {
+                          const DrcResult& drc) {
+    if (drc.violations.empty()) {
+        write_clean_metal_svg(filename, shapes);
+        return;
+    }
+
     std::ofstream svg(filename);
     if (!svg) throw std::runtime_error("Cannot write SVG: " + filename);
 
-    const SvgView view = make_view(shapes, violations);
+    const SvgView view = make_view(shapes, drc.violations);
     write_svg_header(svg, "EOL DRC result");
     svg << "<text class=\"title\" x=\"40\" y=\"42\">EOL DRC Result</text>\n";
     svg << "<text class=\"sub\" x=\"40\" y=\"66\">"
-        << violations.size() << " violation(s), eolWidth=0.6, eolSpace=1.0, "
-        << "eolParallel=0.7, eolWithin=0.4 um</text>\n";
+        << drc.violations.size()
+        << " violation(s), eolWidth=0.6, eolSpace=1.0, eolWithin=0.4 um</text>\n";
     write_axes(svg, view);
     write_shapes(svg, shapes, view);
-    for (const auto& v : violations) {
+    std::vector<int> drawn_checks;
+    for (const auto& v : drc.violations) {
+        if (std::find(drawn_checks.begin(), drawn_checks.end(), v.check_id) != drawn_checks.end()) {
+            continue;
+        }
+        drawn_checks.push_back(v.check_id);
         const Polygon region = make_rectangle(minx(v.region), miny(v.region),
                                               maxx(v.region), maxy(v.region));
-        svg << "<path class=\"viol\" d=\"" << polygon_path(region, view) << "\"/>\n";
+        svg << "<path class=\"check\" d=\"" << polygon_path(region, view)
+            << "\"><title>E" << v.check_id << " / M" << v.source_id
+            << " spacing check region</title></path>\n";
+    }
+    // Paint only the intruding metal red, after all orange check regions.
+    for (const auto& v : drc.violations) {
+        const auto target = std::find_if(shapes.begin(), shapes.end(),
+            [&](const Shape& shape) { return shape.id == v.target_id; });
+        if (target == shapes.end()) continue;
+        const Polygon region = make_rectangle(minx(v.region), miny(v.region),
+                                              maxx(v.region), maxy(v.region));
+        std::vector<Polygon> overlaps;
+        bg::intersection(target->poly, region, overlaps);
+        for (const auto& overlap : overlaps) {
+            if (std::abs(bg::area(overlap)) <= EPS) continue;
+            svg << "<path class=\"viol\" fill-rule=\"evenodd\" d=\"" << polygon_path(overlap, view)
+            << "\"><title>E" << v.check_id << " / M" << v.source_id
+            << " vs M" << v.target_id << ": " << xml_escape(v.reason) << "</title></path>\n";
+        }
+    }
+    for (const auto& edge : drc.edges) {
+        svg << "<line class=\"eol\" x1=\"" << sx(view, bg::get<0>(edge.start))
+            << "\" y1=\"" << sy(view, bg::get<1>(edge.start))
+            << "\" x2=\"" << sx(view, bg::get<0>(edge.end))
+            << "\" y2=\"" << sy(view, bg::get<1>(edge.end))
+            << "\"><title>E" << edge.id << " EOL edge</title></line>\n";
     }
 
-    svg << "<rect x=\"740\" y=\"30\" width=\"20\" height=\"12\" class=\"metal\"/>\n";
-    svg << "<text class=\"legend\" x=\"770\" y=\"41\">M1 metal</text>\n";
-    svg << "<rect x=\"740\" y=\"54\" width=\"20\" height=\"12\" class=\"viol\"/>\n";
-    svg << "<text class=\"legend\" x=\"770\" y=\"65\">Violated EOL check region</text>\n";
+    write_shape_labels(svg, shapes, view);
+
+    svg << "<rect x=\"86\" y=\"686\" width=\"20\" height=\"12\" class=\"metal\"/>\n"
+        << "<text class=\"legend\" x=\"116\" y=\"697\">M1 metal</text>\n"
+        << "<rect x=\"260\" y=\"686\" width=\"20\" height=\"12\" class=\"check\"/>\n"
+        << "<text class=\"legend\" x=\"290\" y=\"697\">Violated EOL check region</text>\n"
+        << "<rect x=\"580\" y=\"686\" width=\"20\" height=\"12\" class=\"viol\"/>\n"
+        << "<text class=\"legend\" x=\"610\" y=\"697\">Intruding metal</text>\n"
+        << "<line x1=\"86\" y1=\"724\" x2=\"106\" y2=\"724\" class=\"eol\"/>\n"
+        << "<text class=\"legend\" x=\"116\" y=\"729\">EOL edge</text>\n";
     svg << "</svg>\n";
 }
 
@@ -664,7 +692,7 @@ int main(int argc, char* argv[]) {
 
         const DrcResult drc = check_eol(merged_m1_shapes);
         write_clean_metal_svg("metal_clean.svg", merged_m1_shapes);
-        write_drc_svg("eol_drc.svg", merged_m1_shapes, drc.violations);
+        write_drc_svg("eol_drc.svg", merged_m1_shapes, drc);
 
         std::cout << std::fixed << std::setprecision(3);
         std::cout << "EOL violations: " << drc.violations.size() << "\n";

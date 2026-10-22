@@ -1,6 +1,6 @@
 # Project 2－EOL DRC 檢查器
 
-本程式使用 Boost.Geometry 實作題目規格中的線端（End-of-Line，EOL）設計規則檢查。
+本程式使用 Boost.Geometry 實作線端（End-of-Line，EOL）的正前方 spacing 設計規則檢查。
 
 ## 規則參數
 
@@ -9,7 +9,6 @@
 ```text
 eolWidth    = 0.6
 eolSpace    = 1.0
-eolParallel = 0.7
 eolWithin   = 0.4
 ```
 
@@ -17,12 +16,11 @@ eolWithin   = 0.4
 
 合併完成後，程式會逐一檢查所有直角 M1 polygon 的實際邊界。當邊界長度小於或等於 `eolWidth`，且相鄰的兩條邊皆朝導體內部延伸時，該邊界會被判定為 EOL edge。EOL edge 的判定只依據金屬本身的幾何形狀，不受附近是否存在其他圖形影響。
 
-程式會對每一個 EOL edge 檢查：
+依題目圖 2(a)，每一個 EOL edge 的矩形檢查區域沿導體外側向前延伸 `eolSpace`，並沿 EOL 邊的方向從兩端各向外擴張 `eolWithin`，因此檢查區域的總寬度為「EOL 邊長 + 2 × eolWithin」。例如長度為 0.6 μm 的水平 EOL 邊，其前方檢查範圍為寬 1.4 μm、深 1.0 μm。
 
-- 長度為 `eolSpace` 的正前方 EOL spacing 區域。
-- 平行長度為 `eolParallel`、向外距離為 `eolWithin` 的兩側 halo 區域。
+這個範圍包含正前方及前方兩側。
 
-若其他同層圖形侵入任一檢查區域，程式便會回報 EOL 違規。沒有圖形侵入時仍會完成檢查，但通過的 EOL edge 不會出現在輸出中，輸出只保留違規項目。
+若其他同層圖形侵入檢查區域，程式便會回報 EOL 違規。終端機只列出違規項目；結果圖標示所有 EOL 邊，並只繪出發生違規的檢查區域。
 
 ## 檔案說明
 
@@ -36,20 +34,13 @@ eol_drc.svg        程式產生的 DRC 結果圖
 
 ## 編譯
 
-```bash
+```
 g++ project2.cpp -std=c++17 -O2 -o project2.exe
 ```
 
-指令用法：
-
-- `project2.cpp`：要編譯的原始碼。
-- `-std=c++17`：使用 C++17 標準。
-- `-O2`：啟用第二級最佳化。
-- `-o project2.exe`：將輸出執行檔命名為 `project2.exe`。
-
 ## 執行
 
-```bash
+```
 ./project2.exe sample_input.txt
 ```
 
@@ -60,11 +51,18 @@ metal_clean.svg
 eol_drc.svg
 ```
 
-`metal_clean.svg` 顯示輸入的原始金屬圖形。`eol_drc.svg` 顯示 DRC 結果，其中藍色為金屬圖形，紅色透明區域為發生違規的 EOL 檢查區域；通過檢查的區域不會繪出。
+無論是否有違規，程式都會產生以上兩張圖。沒有違規時，`eol_drc.svg` 與 `metal_clean.svg` 內容完全相同，僅顯示金屬圖形與編號，不加上 EOL 邊或違規標示。
+
+`metal_clean.svg` 顯示合併後的金屬圖形。`eol_drc.svg` 顯示 DRC 結果：
+
+- 藍色：金屬圖形。
+- 鮮橘色透明區域：發生 EOL spacing 違規的完整檢查範圍。
+- 鮮紅色透明區域：其他金屬實際侵入檢查範圍的部分（目標金屬與檢查範圍的交集）。
+- 深綠色粗線：所有被判定為 EOL 的邊。
+
+通過檢查的範圍不會繪出。滑鼠停在鮮橘色範圍、鮮紅色區域或深綠色 EOL 邊上，可查看對應的 EOL 編號；鮮紅色區域另提供涉及的金屬編號與違規原因。EOL 編號對應終端機訊息中的 `E#`。
 
 ## 輸入格式
-
-輸入格式沿用 Project 1：
 
 ```text
 number_of_layers 1
