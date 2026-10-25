@@ -7,9 +7,11 @@
 所有數值的單位皆為 μm。
 
 ```text
-eolWidth    = 0.6
-eolSpace    = 1.0
-eolWithin   = 0.4
+eolWidth        = 0.6
+eolSpace        = 1.0
+eolWithin       = 0.4
+parallelLength  = 0.7
+parallelHalo    = 0.4
 ```
 
 檢查前，程式會使用 Boost.Geometry 的 `union_` 合併同一層的 M1 金屬圖形。因此，互相重疊或接觸的金屬會被視為同一個導體。
@@ -20,7 +22,11 @@ eolWithin   = 0.4
 
 這個範圍包含正前方及前方兩側。
 
-若其他同層圖形侵入檢查區域，程式便會回報 EOL 違規。終端機只列出違規項目；結果圖標示所有 EOL 邊，並只繪出發生違規的檢查區域。
+另外依題目第一張圖，每一個 EOL edge 的兩側各有一塊 parallel halo：與金屬側邊相距 `parallelHalo` 以內，並從 EOL 邊沿金屬往後延伸 `parallelLength`。例如垂直金屬的上端 EOL 位於 y = a，兩側 halo 的範圍為 y ∈ [a−0.7, a]、寬 0.4。
+
+每一個 EOL edge 都一定會檢查上述三塊區域（前方一塊、兩側 halo 各一塊）。區域內沒有其他金屬代表規則通過，而不是規則未啟用。
+
+若其他同層圖形侵入任一檢查區域，程式便會回報 EOL 違規。侵入的判定為「交集面積大於 0」，只有邊界接觸（例如間距恰好 1.0 或恰好 0.4）不算違規。終端機只列出違規項目；結果圖標示所有 EOL 邊，並只繪出發生違規的檢查區域。
 
 ## 檔案說明
 
@@ -34,8 +40,16 @@ eol_drc.svg        程式產生的 DRC 結果圖
 
 ## 編譯
 
+需要支援 C++17 的編譯器，以及 Boost 標頭檔（Boost.Geometry 為 header-only，不需連結函式庫）。
+
 ```
 g++ project2.cpp -std=c++17 -O2 -o project2.exe
+```
+
+若編譯器找不到 `boost/geometry.hpp`，請用 `-I` 指定 Boost 標頭檔所在目錄，例如：
+
+```
+g++ project2.cpp -std=c++17 -O2 -I/opt/homebrew/include -o project2.exe
 ```
 
 ## 執行
@@ -44,7 +58,7 @@ g++ project2.cpp -std=c++17 -O2 -o project2.exe
 ./project2.exe sample_input.txt
 ```
 
-程式只會在終端機列出偵測到的違規，並產生下列檔案：
+程式只會在終端機列出偵測到的違規。每筆違規會顯示 EOL 編號、來源與目標金屬、違規原因（`EOL spacing < 1.0` 或 `parallel halo intruded`）、檢查區域座標，以及目標金屬實際侵入的範圍（intruding metal）。程式並產生下列檔案：
 
 ```text
 metal_clean.svg
@@ -56,7 +70,7 @@ eol_drc.svg
 `metal_clean.svg` 顯示合併後的金屬圖形。`eol_drc.svg` 顯示 DRC 結果：
 
 - 藍色：金屬圖形。
-- 鮮橘色透明區域：發生 EOL spacing 違規的完整檢查範圍。
+- 鮮橘色透明區域：發生違規的完整檢查範圍（前方 spacing 區域或兩側 parallel halo）。
 - 鮮紅色透明區域：其他金屬實際侵入檢查範圍的部分（目標金屬與檢查範圍的交集）。
 - 深綠色粗線：所有被判定為 EOL 的邊。
 
