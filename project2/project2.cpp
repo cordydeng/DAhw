@@ -24,6 +24,8 @@ static constexpr double EPS = 1e-9;
 static constexpr double EOL_WIDTH = 0.6;
 static constexpr double EOL_SPACE = 1.0;
 static constexpr double EOL_WITHIN = 0.4;
+static constexpr double PARALLEL_LENGTH = 0.7;
+static constexpr double PARALLEL_HALO = 0.4;
 
 struct Layer {
     std::string name;
@@ -49,6 +51,7 @@ struct Violation {
     std::string end_name;
     std::string reason;
     Box region;
+    Box intrusion;
 };
 
 struct DrcResult {
@@ -267,17 +270,22 @@ static bool box_has_positive_area(const Box& b) {
     return maxx(b) - minx(b) > EPS && maxy(b) - miny(b) > EPS;
 }
 
-static bool shape_overlaps_region(const Shape& shape, const Box& region) {
+static bool shape_overlaps_region(const Shape& shape, const Box& region, Box& intrusion) {
     if (!box_has_positive_area(region)) return false;
 
     Polygon region_poly = make_rectangle(minx(region), miny(region),
                                          maxx(region), maxy(region));
     std::vector<Polygon> out;
     bg::intersection(shape.poly, region_poly, out);
+    bool found = false;
     for (const auto& p : out) {
-        if (std::abs(bg::area(p)) > EPS) return true;
+        if (std::abs(bg::area(p)) <= EPS) continue;
+        const Box b = polygon_box(p);
+        if (found) bg::expand(intrusion, b);
+        else intrusion = b;
+        found = true;
     }
-    return false;
+    return found;
 }
 
 static void add_violation(std::vector<Violation>& violations,
@@ -286,8 +294,9 @@ static void add_violation(std::vector<Violation>& violations,
                           const Shape& target,
                           const std::string& end_name,
                           const std::string& reason,
-                          const Box& region) {
-    violations.push_back({check_id, source.id, target.id, end_name, reason, region});
+                          const Box& region,
+                          const Box& intrusion) {
+    violations.push_back({check_id, source.id, target.id, end_name, reason, region, intrusion});
 }
 
 static int check_region(const std::vector<Shape>& shapes,
@@ -300,8 +309,9 @@ static int check_region(const std::vector<Shape>& shapes,
     int count = 0;
     for (const auto& target : shapes) {
         if (target.id == source.id || target.layer != source.layer) continue;
-        if (shape_overlaps_region(target, region)) {
-            add_violation(violations, check_id, source, target, end_name, reason, region);
+        Box intrusion;
+        if (shape_overlaps_region(target, region, intrusion)) {
+            add_violation(violations, check_id, source, target, end_name, reason, region, intrusion);
             ++count;
         }
     }
@@ -408,6 +418,28 @@ static DrcResult check_eol(const std::vector<Shape>& shapes) {
                 std::max(bg::get<1>(p0), bg::get<1>(p1)) + std::max(0.0, oy * EOL_SPACE) + margin_y);
             check_region(shapes, shape, check_id, end_name, "EOL spacing < 1.0",
                          region, result.violations);
+
+            // Fig. 1: a parallel halo on both sides of the EOL, PARALLEL_HALO
+            // away from the wire and running back from the EOL edge by
+            // PARALLEL_LENGTH. It is always checked: an empty halo means the
+            // rule passes, not that it is skipped.
+            const double edge_pos = vertical ? bg::get<0>(p0) : bg::get<1>(p0);
+            const double back_pos = edge_pos + (vertical ? ix : iy) * PARALLEL_LENGTH;
+            const double lo = vertical ? std::min(bg::get<1>(p0), bg::get<1>(p1))
+                                       : std::min(bg::get<0>(p0), bg::get<0>(p1));
+            const double hi = vertical ? std::max(bg::get<1>(p0), bg::get<1>(p1))
+                                       : std::max(bg::get<0>(p0), bg::get<0>(p1));
+            const Box side_lo = vertical
+                ? normalized_box(edge_pos, lo - PARALLEL_HALO, back_pos, lo)
+                : normalized_box(lo - PARALLEL_HALO, edge_pos, lo, back_pos);
+            const Box side_hi = vertical
+                ? normalized_box(edge_pos, hi, back_pos, hi + PARALLEL_HALO)
+                : normalized_box(hi, edge_pos, hi + PARALLEL_HALO, back_pos);
+            for (const Box& side : {side_lo, side_hi}) {
+                check_region(shapes, shape, check_id, end_name,
+                             "parallel halo intruded (0.4 x 0.7)",
+                             side, result.violations);
+            }
         }
     }
     return result;
@@ -625,17 +657,17 @@ static void write_drc_svg(const std::string& filename,
         << " violation(s), eolWidth=0.6, eolSpace=1.0, eolWithin=0.4 um</text>\n";
     write_axes(svg, view);
     write_shapes(svg, shapes, view);
-    std::vector<int> drawn_checks;
+    std::vector<Box> drawn_regions;
     for (const auto& v : drc.violations) {
-        if (std::find(drawn_checks.begin(), drawn_checks.end(), v.check_id) != drawn_checks.end()) {
-            continue;
-        }
-        drawn_checks.push_back(v.check_id);
+        const bool drawn = std::any_of(drawn_regions.begin(), drawn_regions.end(),
+            [&](const Box& b) { return bg::equals(b, v.region); });
+        if (drawn) continue;
+        drawn_regions.push_back(v.region);
         const Polygon region = make_rectangle(minx(v.region), miny(v.region),
                                               maxx(v.region), maxy(v.region));
         svg << "<path class=\"check\" d=\"" << polygon_path(region, view)
             << "\"><title>E" << v.check_id << " / M" << v.source_id
-            << " spacing check region</title></path>\n";
+            << " check region: " << xml_escape(v.reason) << "</title></path>\n";
     }
     // Paint only the intruding metal red, after all orange check regions.
     for (const auto& v : drc.violations) {
@@ -703,8 +735,10 @@ int main(int argc, char* argv[]) {
                       << " " << v.end_name
                       << " end vs shape " << v.target_id
                       << " -- " << v.reason
-                      << " at ";
+                      << " | check region ";
             print_box(v.region);
+            std::cout << " | intruding metal ";
+            print_box(v.intrusion);
             std::cout << "\n";
         }
     } catch (const std::exception& e) {

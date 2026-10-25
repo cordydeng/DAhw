@@ -39,9 +39,9 @@
 <path class="metal" d="M 143.103 382.394 L 143.103 351.803 L 454.113 351.803 L 454.113 382.394 L 143.103 382.394 Z "/>
 <path class="metal" d="M 347.044 433.379 L 347.044 402.788 L 540.788 402.788 L 540.788 433.379 L 347.044 433.379 Z "/>
 <path class="metal" d="M 673.35 351.803 L 673.35 341.606 L 703.941 341.606 L 703.941 351.803 L 856.897 351.803 L 856.897 382.394 L 703.941 382.394 L 703.941 392.591 L 673.35 392.591 L 673.35 382.394 L 500 382.394 L 500 351.803 L 673.35 351.803 Z "/>
-<path class="check" d="M 454.113 402.788 L 454.113 331.409 L 505.099 331.409 L 505.099 402.788 L 454.113 402.788 Z "><title>E6 / M3 spacing check region</title></path>
-<path class="check" d="M 652.956 341.606 L 652.956 290.621 L 724.335 290.621 L 724.335 341.606 L 652.956 341.606 Z "><title>E9 / M5 spacing check region</title></path>
-<path class="check" d="M 449.015 402.788 L 449.015 331.409 L 500 331.409 L 500 402.788 L 449.015 402.788 Z "><title>E12 / M5 spacing check region</title></path>
+<path class="check" d="M 454.113 402.788 L 454.113 331.409 L 505.099 331.409 L 505.099 402.788 L 454.113 402.788 Z "><title>E6 / M3 check region: EOL spacing &lt; 1.0</title></path>
+<path class="check" d="M 652.956 341.606 L 652.956 290.621 L 724.335 290.621 L 724.335 341.606 L 652.956 341.606 Z "><title>E9 / M5 check region: EOL spacing &lt; 1.0</title></path>
+<path class="check" d="M 449.015 402.788 L 449.015 331.409 L 500 331.409 L 500 402.788 L 449.015 402.788 Z "><title>E12 / M5 check region: EOL spacing &lt; 1.0</title></path>
 <path class="viol" fill-rule="evenodd" d="M 505.099 382.394 L 500 382.394 L 500 351.803 L 505.099 351.803 L 505.099 382.394 Z "><title>E6 / M3 vs M5: EOL spacing &lt; 1.0</title></path>
 <path class="viol" fill-rule="evenodd" d="M 652.956 290.621 L 724.335 290.621 L 724.335 321.212 L 652.956 321.212 L 652.956 290.621 Z "><title>E9 / M5 vs M1: EOL spacing &lt; 1.0</title></path>
 <path class="viol" fill-rule="evenodd" d="M 449.015 351.803 L 454.113 351.803 L 454.113 382.394 L 449.015 382.394 L 449.015 351.803 Z "><title>E12 / M5 vs M3: EOL spacing &lt; 1.0</title></path>
