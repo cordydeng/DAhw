@@ -1,0 +1,28 @@
+QMAKE_CXX.QT_COMPILER_STDCXX = 201402L
+QMAKE_CXX.QMAKE_GCC_MAJOR_VERSION = 9
+QMAKE_CXX.QMAKE_GCC_MINOR_VERSION = 3
+QMAKE_CXX.QMAKE_GCC_PATCH_VERSION = 0
+QMAKE_CXX.COMPILER_MACROS = \
+    QT_COMPILER_STDCXX \
+    QMAKE_GCC_MAJOR_VERSION \
+    QMAKE_GCC_MINOR_VERSION \
+    QMAKE_GCC_PATCH_VERSION
+QMAKE_CXX.INCDIRS = \
+    /grid/common/pkgsData/gcc-v9.3.0/Linux/RHEL6.0-2013-x86_64/include/c++/9.3.0 \
+    /grid/common/pkgsData/gcc-v9.3.0/Linux/RHEL6.0-2013-x86_64/include/c++/9.3.0/x86_64-redhat-linux \
+    /grid/common/pkgsData/gcc-v9.3.0/Linux/RHEL6.0-2013-x86_64/include/c++/9.3.0/backward \
+    /grid/common/pkgsData/gcc-v9.3.0/Linux/RHEL6.0-2013-x86_64/lib/gcc/x86_64-redhat-linux/9.3.0/include \
+    /usr/local/include \
+    /grid/common/pkgsData/gcc-v9.3.0/Linux/RHEL6.0-2013-x86_64/include \
+    /grid/common/pkgsData/gcc-v9.3.0/Linux/RHEL6.0-2013-x86_64/lib/gcc/x86_64-redhat-linux/9.3.0/include-fixed \
+    /usr/include
+QMAKE_CXX.LIBDIRS = \
+    /grid/common/pkgsData/gcc-v9.3.0/Linux/RHEL6.0-2013-x86_64/lib/gcc/x86_64-redhat-linux/9.3.0 \
+    /grid/common/pkgsData/gcc-v9.3.0/Linux/RHEL6.0-2013-x86_64/x86_64-redhat-linux/lib64 \
+    /grid/common/pkgsData/gcc-v9.3.0/Linux/RHEL6.0-2013-x86_64/lib64 \
+    /lib64 \
+    /usr/lib64 \
+    /grid/common/pkgsData/gcc-v9.3.0/Linux/RHEL6.0-2013-x86_64/x86_64-redhat-linux/lib \
+    /grid/common/pkgsData/gcc-v9.3.0/Linux/RHEL6.0-2013-x86_64/lib \
+    /lib \
+    /usr/lib
