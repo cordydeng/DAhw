@@ -49,6 +49,7 @@ struct Violation {
     std::string end_name;
     std::string reason;
     Box region;
+    int layer = 0;
 };
 
 struct DrcResult {
@@ -56,6 +57,7 @@ struct DrcResult {
         int id;
         Point start;
         Point end;
+        int layer;
     };
     std::vector<EolEdge> edges;
     std::vector<Violation> violations;
@@ -256,11 +258,32 @@ static Layout parse_layout(const std::string& filename) {
     return layout;
 }
 
-static int m1_layer_number(const Layout& layout) {
+static std::vector<Layer> metal_layers(const Layout& layout) {
+    std::vector<Layer> result;
     for (const auto& layer : layout.layers) {
-        if (layer.name == "M1") return layer.number;
+        if (layer.name.size() > 1 && layer.name[0] == 'M' &&
+            layer.name.find_first_not_of("0123456789", 1) == std::string::npos) {
+            if (std::none_of(result.begin(), result.end(),
+                [&](const Layer& item) { return item.number == layer.number; })) {
+                result.push_back(layer);
+            }
+        }
     }
-    return layout.layers.empty() ? 1 : layout.layers.front().number;
+    if (result.empty()) throw std::runtime_error("No metal layers named M1, M2, ... were declared.");
+    return result;
+}
+
+static std::string layer_name(const std::vector<Layer>& layers, int number) {
+    for (const auto& layer : layers) if (layer.number == number) return layer.name;
+    return "Layer " + std::to_string(number);
+}
+
+static std::string layer_color(const std::vector<Layer>& layers, int number) {
+    const auto it = std::find_if(layers.begin(), layers.end(),
+        [&](const Layer& layer) { return layer.number == number; });
+    const std::size_t index = static_cast<std::size_t>(it - layers.begin());
+    // Golden-angle hues keep adjacent layers visually distinct.
+    return "hsl(" + std::to_string((200 + index * 137) % 360) + ",65%,48%)";
 }
 
 static bool box_has_positive_area(const Box& b) {
@@ -287,7 +310,7 @@ static void add_violation(std::vector<Violation>& violations,
                           const std::string& end_name,
                           const std::string& reason,
                           const Box& region) {
-    violations.push_back({check_id, source.id, target.id, end_name, reason, region});
+    violations.push_back({check_id, source.id, target.id, end_name, reason, region, source.layer});
 }
 
 static int check_region(const std::vector<Shape>& shapes,
@@ -390,7 +413,7 @@ static DrcResult check_eol(const std::vector<Shape>& shapes) {
             }
 
             const int check_id = next_check_id++;
-            result.edges.push_back({check_id, p0, p1});
+            result.edges.push_back({check_id, p0, p1, shape.layer});
             std::string end_name;
             if (ox < 0.0) end_name = "left";
             else if (ox > 0.0) end_name = "right";
@@ -514,12 +537,14 @@ static std::string polygon_path(const Polygon& poly, const SvgView& view) {
     return path.str();
 }
 
-static void write_svg_header(std::ostream& svg, const std::string& title) {
+static void write_svg_header(std::ostream& svg, const std::string& title,
+                             std::size_t layer_count) {
+    const std::size_t height = 800 + ((layer_count + 3) / 4) * 28;
     svg << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-    svg << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1000\" height=\"760\" "
-        << "viewBox=\"0 0 1000 760\" role=\"img\" aria-label=\""
+    svg << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1000\" height=\"" << height << "\" "
+        << "viewBox=\"0 0 1000 " << height << "\" role=\"img\" aria-label=\""
         << xml_escape(title) << "\">\n";
-    svg << "<rect width=\"1000\" height=\"760\" fill=\"#ffffff\"/>\n";
+    svg << "<rect width=\"1000\" height=\"" << height << "\" fill=\"#ffffff\"/>\n";
     svg << "<style><![CDATA[\n";
     svg << ".title{font:700 24px Arial,sans-serif;fill:#111827}"
         << ".sub{font:14px Arial,sans-serif;fill:#4b5563}"
@@ -572,45 +597,68 @@ static void write_axes(std::ostream& svg, const SvgView& view) {
 
 static void write_shapes(std::ostream& svg,
                          const std::vector<Shape>& shapes,
-                         const SvgView& view) {
+                         const SvgView& view,
+                         const std::vector<Layer>& layers) {
     for (const auto& shape : shapes) {
-        svg << "<path class=\"metal\" d=\"" << polygon_path(shape.poly, view) << "\"/>\n";
+        svg << "<path class=\"metal\" style=\"fill:" << layer_color(layers, shape.layer)
+            << ";stroke:" << layer_color(layers, shape.layer)
+            << ";fill-opacity:.28\" d=\"" << polygon_path(shape.poly, view)
+            << "\"><title>" << xml_escape(layer_name(layers, shape.layer))
+            << " / S" << shape.id << "</title></path>\n";
     }
 }
 
 static void write_shape_labels(std::ostream& svg,
                                const std::vector<Shape>& shapes,
-                               const SvgView& view) {
+                               const SvgView& view,
+                               const std::vector<Layer>& layers) {
     for (const auto& shape : shapes) {
         const double cx = (minx(shape.bbox) + maxx(shape.bbox)) * 0.5;
         const double cy = (miny(shape.bbox) + maxy(shape.bbox)) * 0.5;
-        svg << "<text class=\"metal-label\" x=\"" << sx(view, cx) << "\" y=\"" << sy(view, cy) + 4
-            << "\" text-anchor=\"middle\">M" << shape.id << "</text>\n";
+        const auto layer_it = std::find_if(layers.begin(), layers.end(),
+            [&](const Layer& layer) { return layer.number == shape.layer; });
+        const auto label_index = static_cast<std::size_t>(layer_it - layers.begin());
+        svg << "<text class=\"metal-label\" x=\"" << sx(view, cx) << "\" y=\""
+            << sy(view, cy) + 4 + 16 * (label_index % 4)
+            << "\" text-anchor=\"middle\">" << xml_escape(layer_name(layers, shape.layer))
+            << "/S" << shape.id << "</text>\n";
+    }
+}
+
+static void write_layer_legend(std::ostream& svg, const std::vector<Layer>& layers) {
+    for (std::size_t i = 0; i < layers.size(); ++i) {
+        const int x = 86 + static_cast<int>(i % 4) * 220;
+        const int y = 780 + static_cast<int>(i / 4) * 28;
+        svg << "<rect x=\"" << x << "\" y=\"" << y - 12
+            << "\" width=\"20\" height=\"12\" fill=\"" << layer_color(layers, layers[i].number)
+            << "\"/><text class=\"legend\" x=\"" << x + 30 << "\" y=\"" << y
+            << "\">" << xml_escape(layers[i].name) << " (layer " << layers[i].number << ")</text>\n";
     }
 }
 
 static void write_clean_metal_svg(const std::string& filename,
-                                  const std::vector<Shape>& shapes) {
+                                  const std::vector<Shape>& shapes,
+                                  const std::vector<Layer>& layers) {
     std::ofstream svg(filename);
     if (!svg) throw std::runtime_error("Cannot write SVG: " + filename);
 
     const SvgView view = make_view(shapes, {});
-    write_svg_header(svg, "Clean M1 metal layout");
-    svg << "<text class=\"title\" x=\"40\" y=\"42\">Clean M1 Metal Layout</text>\n";
+    write_svg_header(svg, "Combined metal layout", layers.size());
+    svg << "<text class=\"title\" x=\"40\" y=\"42\">Combined Metal Layout</text>\n";
     svg << "<text class=\"sub\" x=\"40\" y=\"66\">Input layout only, no DRC markers</text>\n";
     write_axes(svg, view);
-    write_shapes(svg, shapes, view);
-    write_shape_labels(svg, shapes, view);
-    svg << "<rect x=\"760\" y=\"34\" width=\"20\" height=\"12\" class=\"metal\"/>\n";
-    svg << "<text class=\"legend\" x=\"790\" y=\"45\">M1 metal</text>\n";
+    write_shapes(svg, shapes, view, layers);
+    write_shape_labels(svg, shapes, view, layers);
+    write_layer_legend(svg, layers);
     svg << "</svg>\n";
 }
 
 static void write_drc_svg(const std::string& filename,
                           const std::vector<Shape>& shapes,
-                          const DrcResult& drc) {
+                          const DrcResult& drc,
+                          const std::vector<Layer>& layers) {
     if (drc.violations.empty()) {
-        write_clean_metal_svg(filename, shapes);
+        write_clean_metal_svg(filename, shapes, layers);
         return;
     }
 
@@ -618,13 +666,13 @@ static void write_drc_svg(const std::string& filename,
     if (!svg) throw std::runtime_error("Cannot write SVG: " + filename);
 
     const SvgView view = make_view(shapes, drc.violations);
-    write_svg_header(svg, "EOL DRC result");
+    write_svg_header(svg, "EOL DRC result", layers.size());
     svg << "<text class=\"title\" x=\"40\" y=\"42\">EOL DRC Result</text>\n";
     svg << "<text class=\"sub\" x=\"40\" y=\"66\">"
         << drc.violations.size()
         << " violation(s), eolWidth=0.6, eolSpace=1.0, eolWithin=0.4 um</text>\n";
     write_axes(svg, view);
-    write_shapes(svg, shapes, view);
+    write_shapes(svg, shapes, view, layers);
     std::vector<int> drawn_checks;
     for (const auto& v : drc.violations) {
         if (std::find(drawn_checks.begin(), drawn_checks.end(), v.check_id) != drawn_checks.end()) {
@@ -633,8 +681,10 @@ static void write_drc_svg(const std::string& filename,
         drawn_checks.push_back(v.check_id);
         const Polygon region = make_rectangle(minx(v.region), miny(v.region),
                                               maxx(v.region), maxy(v.region));
-        svg << "<path class=\"check\" d=\"" << polygon_path(region, view)
-            << "\"><title>E" << v.check_id << " / M" << v.source_id
+        svg << "<path class=\"check\" style=\"stroke:" << layer_color(layers, v.layer)
+            << "\" d=\"" << polygon_path(region, view)
+            << "\"><title>" << xml_escape(layer_name(layers, v.layer))
+            << " / E" << v.check_id << " / S" << v.source_id
             << " spacing check region</title></path>\n";
     }
     // Paint only the intruding metal red, after all orange check regions.
@@ -648,9 +698,11 @@ static void write_drc_svg(const std::string& filename,
         bg::intersection(target->poly, region, overlaps);
         for (const auto& overlap : overlaps) {
             if (std::abs(bg::area(overlap)) <= EPS) continue;
-            svg << "<path class=\"viol\" fill-rule=\"evenodd\" d=\"" << polygon_path(overlap, view)
-            << "\"><title>E" << v.check_id << " / M" << v.source_id
-            << " vs M" << v.target_id << ": " << xml_escape(v.reason) << "</title></path>\n";
+            svg << "<path class=\"viol\" style=\"stroke:" << layer_color(layers, v.layer)
+            << "\" fill-rule=\"evenodd\" d=\"" << polygon_path(overlap, view)
+            << "\"><title>" << xml_escape(layer_name(layers, v.layer))
+            << " / E" << v.check_id << " / S" << v.source_id
+            << " vs S" << v.target_id << ": " << xml_escape(v.reason) << "</title></path>\n";
         }
     }
     for (const auto& edge : drc.edges) {
@@ -658,19 +710,22 @@ static void write_drc_svg(const std::string& filename,
             << "\" y1=\"" << sy(view, bg::get<1>(edge.start))
             << "\" x2=\"" << sx(view, bg::get<0>(edge.end))
             << "\" y2=\"" << sy(view, bg::get<1>(edge.end))
-            << "\"><title>E" << edge.id << " EOL edge</title></line>\n";
+            << "\" style=\"stroke:" << layer_color(layers, edge.layer)
+            << "\"><title>" << xml_escape(layer_name(layers, edge.layer))
+            << " / E" << edge.id << " EOL edge</title></line>\n";
     }
 
-    write_shape_labels(svg, shapes, view);
+    write_shape_labels(svg, shapes, view, layers);
 
     svg << "<rect x=\"86\" y=\"686\" width=\"20\" height=\"12\" class=\"metal\"/>\n"
-        << "<text class=\"legend\" x=\"116\" y=\"697\">M1 metal</text>\n"
+        << "<text class=\"legend\" x=\"116\" y=\"697\">Metal layers</text>\n"
         << "<rect x=\"260\" y=\"686\" width=\"20\" height=\"12\" class=\"check\"/>\n"
         << "<text class=\"legend\" x=\"290\" y=\"697\">Violated EOL check region</text>\n"
         << "<rect x=\"580\" y=\"686\" width=\"20\" height=\"12\" class=\"viol\"/>\n"
         << "<text class=\"legend\" x=\"610\" y=\"697\">Intruding metal</text>\n"
-        << "<line x1=\"86\" y1=\"724\" x2=\"106\" y2=\"724\" class=\"eol\"/>\n"
-        << "<text class=\"legend\" x=\"116\" y=\"729\">EOL edge</text>\n";
+        << "<line x1=\"86\" y1=\"724\" x2=\"106\" y2=\"724\" class=\"eol\" style=\"stroke:#374151\"/>\n"
+        << "<text class=\"legend\" x=\"116\" y=\"729\">EOL edges and marker outlines use layer colors</text>\n";
+    write_layer_legend(svg, layers);
     svg << "</svg>\n";
 }
 
@@ -687,19 +742,31 @@ int main(int argc, char* argv[]) {
         }
 
         Layout layout = parse_layout(argv[1]);
-        const int m1 = m1_layer_number(layout);
-        std::vector<Shape> merged_m1_shapes = merge_same_layer_shapes(layout.shapes, m1);
+        const auto layers = metal_layers(layout);
+        std::vector<Shape> merged_shapes;
+        for (const auto& layer : layers) {
+            auto shapes = merge_same_layer_shapes(layout.shapes, layer.number);
+            for (auto& shape : shapes) {
+                shape.id = static_cast<int>(merged_shapes.size()) + 1;
+                merged_shapes.push_back(shape);
+            }
+        }
 
-        const DrcResult drc = check_eol(merged_m1_shapes);
-        write_clean_metal_svg("metal_clean.svg", merged_m1_shapes);
-        write_drc_svg("eol_drc.svg", merged_m1_shapes, drc);
+        const DrcResult drc = check_eol(merged_shapes);
+        write_clean_metal_svg("metal_clean.svg", merged_shapes, layers);
+        write_drc_svg("eol_drc.svg", merged_shapes, drc, layers);
 
         std::cout << std::fixed << std::setprecision(3);
         std::cout << "EOL violations: " << drc.violations.size() << "\n";
+        for (const auto& layer : layers) {
+            const auto count = std::count_if(drc.violations.begin(), drc.violations.end(),
+                [&](const Violation& v) { return v.layer == layer.number; });
+            std::cout << layer.name << " (layer " << layer.number << "): " << count << " violation(s)\n";
+        }
         for (std::size_t i = 0; i < drc.violations.size(); ++i) {
             const auto& v = drc.violations[i];
             std::cout << "V" << (i + 1)
-                      << " (E" << v.check_id << "): shape " << v.source_id
+                      << " [" << layer_name(layers, v.layer) << "] (E" << v.check_id << "): shape " << v.source_id
                       << " " << v.end_name
                       << " end vs shape " << v.target_id
                       << " -- " << v.reason
