@@ -1,3 +1,5 @@
 *.svg
+*.txt
+*.exe
 .DS_Store
 /https:/
