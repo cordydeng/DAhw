@@ -5,65 +5,63 @@
 .title{font:700 24px Arial,sans-serif;fill:#111827}.sub{font:14px Arial,sans-serif;fill:#4b5563}.axis{stroke:#374151;stroke-width:1.2}.grid{stroke:#e5e7eb;stroke-width:1}.tick{font:12px Arial,sans-serif;fill:#4b5563}.metal{fill:#8ecae6;stroke:#145f86;stroke-width:1.6;fill-opacity:.9;fill-rule:evenodd}.check{fill:#ff8800;stroke:#e67300;stroke-width:1.8;fill-opacity:.6}.viol{fill:#ff0000;stroke:#d90000;stroke-width:1.8;fill-opacity:.9}.eol{stroke:#166534;stroke-width:3.5;stroke-linecap:round}.metal-label{font:700 13px Arial,sans-serif;fill:#111827;paint-order:stroke;stroke:#fff;stroke-width:3;stroke-linejoin:round;pointer-events:none}.label{font:13px Arial,sans-serif;fill:#111827}.legend{font:14px Arial,sans-serif;fill:#111827}
 ]]></style>
 <text class="title" x="40" y="42">Combined EOL DRC Result</text>
-<text class="sub" x="40" y="66">3 violation(s), eolWidth=0.6, eolSpace=1.0, eolWithin=0.4 um</text>
-<line class="axis" x1="86" y1="490.483" x2="914" y2="490.483"/>
-<line class="axis" x1="86" y1="490.483" x2="86" y2="233.517"/>
-<text class="label" x="930" y="495.483">X</text>
-<text class="label" x="81" y="217.517" text-anchor="end">Y</text>
-<line class="grid" x1="86" y1="233.517" x2="86" y2="490.483"/>
-<text class="tick" x="86" y="510.483" text-anchor="middle">-1.12</text>
-<line class="grid" x1="86" y1="490.483" x2="914" y2="490.483"/>
-<text class="tick" x="76" y="494.483" text-anchor="end">-1.12</text>
-<line class="grid" x1="251.6" y1="233.517" x2="251.6" y2="490.483"/>
-<text class="tick" x="251.6" y="510.483" text-anchor="middle">2.13</text>
-<line class="grid" x1="86" y1="439.09" x2="914" y2="439.09"/>
-<text class="tick" x="76" y="443.09" text-anchor="end">-0.11</text>
-<line class="grid" x1="417.2" y1="233.517" x2="417.2" y2="490.483"/>
-<text class="tick" x="417.2" y="510.483" text-anchor="middle">5.38</text>
-<line class="grid" x1="86" y1="387.697" x2="914" y2="387.697"/>
-<text class="tick" x="76" y="391.697" text-anchor="end">0.9</text>
-<line class="grid" x1="582.8" y1="233.517" x2="582.8" y2="490.483"/>
-<text class="tick" x="582.8" y="510.483" text-anchor="middle">8.62</text>
-<line class="grid" x1="86" y1="336.303" x2="914" y2="336.303"/>
-<text class="tick" x="76" y="340.303" text-anchor="end">1.9</text>
-<line class="grid" x1="748.4" y1="233.517" x2="748.4" y2="490.483"/>
-<text class="tick" x="748.4" y="510.483" text-anchor="middle">11.87</text>
-<line class="grid" x1="86" y1="284.91" x2="914" y2="284.91"/>
-<text class="tick" x="76" y="288.91" text-anchor="end">2.91</text>
-<line class="grid" x1="914" y1="233.517" x2="914" y2="490.483"/>
-<text class="tick" x="914" y="510.483" text-anchor="middle">15.12</text>
-<line class="grid" x1="86" y1="233.517" x2="914" y2="233.517"/>
-<text class="tick" x="76" y="237.517" text-anchor="end">3.92</text>
-<path class="metal" style="fill:hsl(200,65%,48%);stroke:hsl(200,65%,48%);fill-opacity:.28" d="M 347.044 433.379 L 347.044 402.788 L 540.788 402.788 L 540.788 433.379 L 347.044 433.379 Z "><title>M1 / S1</title></path>
-<path class="metal" style="fill:hsl(200,65%,48%);stroke:hsl(200,65%,48%);fill-opacity:.28" d="M 143.103 382.394 L 143.103 351.803 L 454.113 351.803 L 454.113 382.394 L 143.103 382.394 Z "><title>M1 / S2</title></path>
-<path class="metal" style="fill:hsl(200,65%,48%);stroke:hsl(200,65%,48%);fill-opacity:.28" d="M 245.074 331.409 L 245.074 300.818 L 347.044 300.818 L 347.044 331.409 L 245.074 331.409 Z "><title>M1 / S3</title></path>
-<path class="metal" style="fill:hsl(200,65%,48%);stroke:hsl(200,65%,48%);fill-opacity:.28" d="M 500 382.394 L 500 351.803 L 856.897 351.803 L 856.897 382.394 L 500 382.394 Z "><title>M1 / S4</title></path>
-<path class="metal" style="fill:hsl(200,65%,48%);stroke:hsl(200,65%,48%);fill-opacity:.28" d="M 673.35 392.591 L 673.35 341.606 L 703.941 341.606 L 703.941 392.591 L 673.35 392.591 Z "><title>M1 / S5</title></path>
-<path class="metal" style="fill:hsl(200,65%,48%);stroke:hsl(200,65%,48%);fill-opacity:.28" d="M 581.576 321.212 L 581.576 290.621 L 856.897 290.621 L 856.897 321.212 L 581.576 321.212 Z "><title>M1 / S6</title></path>
-<path class="check" style="stroke:hsl(200,65%,48%)" d="M 454.113 402.788 L 454.113 331.409 L 505.099 331.409 L 505.099 402.788 L 454.113 402.788 Z "><title>M1 / E6 / S2 spacing check region</title></path>
-<path class="check" style="stroke:hsl(200,65%,48%)" d="M 652.956 341.606 L 652.956 290.621 L 724.335 290.621 L 724.335 341.606 L 652.956 341.606 Z "><title>M1 / E9 / S5 spacing check region</title></path>
-<path class="check" style="stroke:hsl(200,65%,48%)" d="M 449.015 402.788 L 449.015 331.409 L 500 331.409 L 500 402.788 L 449.015 402.788 Z "><title>M1 / E12 / S4 spacing check region</title></path>
-<path class="viol" style="stroke:hsl(200,65%,48%)" fill-rule="evenodd" d="M 505.099 351.803 L 505.099 382.394 L 500 382.394 L 500 351.803 L 505.099 351.803 Z "><title>M1 / E6 / S2 vs S4: EOL spacing &lt; 1.0</title></path>
-<path class="viol" style="stroke:hsl(200,65%,48%)" fill-rule="evenodd" d="M 652.956 290.621 L 724.335 290.621 L 724.335 321.212 L 652.956 321.212 L 652.956 290.621 Z "><title>M1 / E9 / S5 vs S6: EOL spacing &lt; 1.0</title></path>
-<path class="viol" style="stroke:hsl(200,65%,48%)" fill-rule="evenodd" d="M 449.015 351.803 L 454.113 351.803 L 454.113 382.394 L 449.015 382.394 L 449.015 351.803 Z "><title>M1 / E12 / S4 vs S2: EOL spacing &lt; 1.0</title></path>
-<line class="eol" x1="581.576" y1="321.212" x2="581.576" y2="290.621" style="stroke:hsl(200,65%,48%)"><title>M1 / S6 / E1 EOL edge</title></line>
-<line class="eol" x1="856.897" y1="290.621" x2="856.897" y2="321.212" style="stroke:hsl(200,65%,48%)"><title>M1 / S6 / E2 EOL edge</title></line>
-<line class="eol" x1="245.074" y1="331.409" x2="245.074" y2="300.818" style="stroke:hsl(200,65%,48%)"><title>M1 / S3 / E3 EOL edge</title></line>
-<line class="eol" x1="347.044" y1="300.818" x2="347.044" y2="331.409" style="stroke:hsl(200,65%,48%)"><title>M1 / S3 / E4 EOL edge</title></line>
-<line class="eol" x1="143.103" y1="382.394" x2="143.103" y2="351.803" style="stroke:hsl(200,65%,48%)"><title>M1 / S2 / E5 EOL edge</title></line>
-<line class="eol" x1="454.113" y1="351.803" x2="454.113" y2="382.394" style="stroke:hsl(200,65%,48%)"><title>M1 / S2 / E6 EOL edge</title></line>
-<line class="eol" x1="347.044" y1="433.379" x2="347.044" y2="402.788" style="stroke:hsl(200,65%,48%)"><title>M1 / S1 / E7 EOL edge</title></line>
-<line class="eol" x1="540.788" y1="402.788" x2="540.788" y2="433.379" style="stroke:hsl(200,65%,48%)"><title>M1 / S1 / E8 EOL edge</title></line>
-<line class="eol" x1="673.35" y1="341.606" x2="703.941" y2="341.606" style="stroke:hsl(200,65%,48%)"><title>M1 / S5 / E9 EOL edge</title></line>
-<line class="eol" x1="856.897" y1="351.803" x2="856.897" y2="382.394" style="stroke:hsl(200,65%,48%)"><title>M1 / S4 / E10 EOL edge</title></line>
-<line class="eol" x1="703.941" y1="392.591" x2="673.35" y2="392.591" style="stroke:hsl(200,65%,48%)"><title>M1 / S5 / E11 EOL edge</title></line>
-<line class="eol" x1="500" y1="382.394" x2="500" y2="351.803" style="stroke:hsl(200,65%,48%)"><title>M1 / S4 / E12 EOL edge</title></line>
-<text class="metal-label" x="443.916" y="422.084" text-anchor="middle">M1/S1</text>
-<text class="metal-label" x="298.608" y="371.099" text-anchor="middle">M1/S2</text>
-<text class="metal-label" x="296.059" y="320.113" text-anchor="middle">M1/S3</text>
-<text class="metal-label" x="678.448" y="371.099" text-anchor="middle">M1/S4</text>
-<text class="metal-label" x="688.645" y="371.099" text-anchor="middle">M1/S5</text>
-<text class="metal-label" x="719.236" y="309.916" text-anchor="middle">M1/S6</text>
+<text class="sub" x="40" y="66">2 violation(s), eolWidth=0.6, eolSpace=1.0, eolWithin=0.4 um</text>
+<line class="axis" x1="86" y1="500.892" x2="914" y2="500.892"/>
+<line class="axis" x1="86" y1="500.892" x2="86" y2="223.108"/>
+<text class="label" x="930" y="505.892">X</text>
+<text class="label" x="81" y="207.108" text-anchor="end">Y</text>
+<line class="grid" x1="86" y1="223.108" x2="86" y2="500.892"/>
+<text class="tick" x="86" y="520.892" text-anchor="middle">0.08</text>
+<line class="grid" x1="86" y1="500.892" x2="914" y2="500.892"/>
+<text class="tick" x="76" y="504.892" text-anchor="end">-1.92</text>
+<line class="grid" x1="251.6" y1="223.108" x2="251.6" y2="500.892"/>
+<text class="tick" x="251.6" y="520.892" text-anchor="middle">5.65</text>
+<line class="grid" x1="86" y1="445.335" x2="914" y2="445.335"/>
+<text class="tick" x="76" y="449.335" text-anchor="end">-0.05</text>
+<line class="grid" x1="417.2" y1="223.108" x2="417.2" y2="500.892"/>
+<text class="tick" x="417.2" y="520.892" text-anchor="middle">11.22</text>
+<line class="grid" x1="86" y1="389.778" x2="914" y2="389.778"/>
+<text class="tick" x="76" y="393.778" text-anchor="end">1.82</text>
+<line class="grid" x1="582.8" y1="223.108" x2="582.8" y2="500.892"/>
+<text class="tick" x="582.8" y="520.892" text-anchor="middle">16.78</text>
+<line class="grid" x1="86" y1="334.222" x2="914" y2="334.222"/>
+<text class="tick" x="76" y="338.222" text-anchor="end">3.68</text>
+<line class="grid" x1="748.4" y1="223.108" x2="748.4" y2="500.892"/>
+<text class="tick" x="748.4" y="520.892" text-anchor="middle">22.35</text>
+<line class="grid" x1="86" y1="278.665" x2="914" y2="278.665"/>
+<text class="tick" x="76" y="282.665" text-anchor="end">5.55</text>
+<line class="grid" x1="914" y1="223.108" x2="914" y2="500.892"/>
+<text class="tick" x="914" y="520.892" text-anchor="middle">27.92</text>
+<line class="grid" x1="86" y1="223.108" x2="914" y2="223.108"/>
+<text class="tick" x="76" y="227.108" text-anchor="end">7.42</text>
+<path class="metal" style="fill:hsl(200,65%,48%);stroke:hsl(200,65%,48%);fill-opacity:.28" d="M 172.845 443.789 L 172.845 324.823 L 190.69 324.823 L 190.69 443.789 L 172.845 443.789 Z "><title>M1 / S1</title></path>
+<path class="metal" style="fill:hsl(200,65%,48%);stroke:hsl(200,65%,48%);fill-opacity:.28" d="M 143.103 309.953 L 143.103 280.211 L 262.069 280.211 L 262.069 309.953 L 143.103 309.953 Z "><title>M1 / S2</title></path>
+<path class="metal" style="fill:hsl(337,65%,48%);stroke:hsl(337,65%,48%);fill-opacity:.28" d="M 199.612 443.789 L 199.612 330.772 L 259.095 330.772 L 259.095 443.789 L 199.612 443.789 Z "><title>M2 / S3</title></path>
+<path class="metal" style="fill:hsl(337,65%,48%);stroke:hsl(337,65%,48%);fill-opacity:.28" d="M 470.259 443.789 L 470.259 324.823 L 488.103 324.823 L 488.103 443.789 L 470.259 443.789 Z "><title>M2 / S4</title></path>
+<path class="metal" style="fill:hsl(337,65%,48%);stroke:hsl(337,65%,48%);fill-opacity:.28" d="M 440.517 309.953 L 440.517 280.211 L 559.483 280.211 L 559.483 309.953 L 440.517 309.953 Z "><title>M2 / S5</title></path>
+<path class="metal" style="fill:hsl(337,65%,48%);stroke:hsl(337,65%,48%);fill-opacity:.28" d="M 497.026 443.789 L 497.026 330.772 L 556.509 330.772 L 556.509 443.789 L 497.026 443.789 Z "><title>M2 / S6</title></path>
+<path class="metal" style="fill:hsl(200,65%,48%);stroke:hsl(200,65%,48%);fill-opacity:.28" d="M 767.672 443.789 L 767.672 324.823 L 785.517 324.823 L 785.517 443.789 L 767.672 443.789 Z "><title>M1 / S7</title></path>
+<path class="metal" style="fill:hsl(337,65%,48%);stroke:hsl(337,65%,48%);fill-opacity:.28" d="M 737.931 309.953 L 737.931 280.211 L 856.897 280.211 L 856.897 309.953 L 737.931 309.953 Z "><title>M2 / S8</title></path>
+<path class="metal" style="fill:hsl(200,65%,48%);stroke:hsl(200,65%,48%);fill-opacity:.28" d="M 794.44 443.789 L 794.44 330.772 L 853.922 330.772 L 853.922 443.789 L 794.44 443.789 Z "><title>M1 / S9</title></path>
+<path class="check" style="stroke:hsl(200,65%,48%)" d="M 160.948 324.823 L 160.948 295.082 L 202.586 295.082 L 202.586 324.823 L 160.948 324.823 Z "><title>M1 / E3 / S1 spacing check region</title></path>
+<path class="check" style="stroke:hsl(337,65%,48%)" d="M 458.362 324.823 L 458.362 295.082 L 500 295.082 L 500 324.823 L 458.362 324.823 Z "><title>M2 / E5 / S4 spacing check region</title></path>
+<path class="viol" style="stroke:hsl(200,65%,48%)" fill-rule="evenodd" d="M 160.948 309.953 L 160.948 295.082 L 202.586 295.082 L 202.586 309.953 L 160.948 309.953 Z "><title>M1 / E3 / S1 vs S2: EOL spacing &lt; 1.0</title></path>
+<path class="viol" style="stroke:hsl(337,65%,48%)" fill-rule="evenodd" d="M 458.362 309.953 L 458.362 295.082 L 500 295.082 L 500 309.953 L 458.362 309.953 Z "><title>M2 / E5 / S4 vs S5: EOL spacing &lt; 1.0</title></path>
+<line class="eol" x1="767.672" y1="324.823" x2="785.517" y2="324.823" style="stroke:hsl(200,65%,48%)"><title>M1 / S7 / E1 EOL edge</title></line>
+<line class="eol" x1="785.517" y1="443.789" x2="767.672" y2="443.789" style="stroke:hsl(200,65%,48%)"><title>M1 / S7 / E2 EOL edge</title></line>
+<line class="eol" x1="172.845" y1="324.823" x2="190.69" y2="324.823" style="stroke:hsl(200,65%,48%)"><title>M1 / S1 / E3 EOL edge</title></line>
+<line class="eol" x1="190.69" y1="443.789" x2="172.845" y2="443.789" style="stroke:hsl(200,65%,48%)"><title>M1 / S1 / E4 EOL edge</title></line>
+<line class="eol" x1="470.259" y1="324.823" x2="488.103" y2="324.823" style="stroke:hsl(337,65%,48%)"><title>M2 / S4 / E5 EOL edge</title></line>
+<line class="eol" x1="488.103" y1="443.789" x2="470.259" y2="443.789" style="stroke:hsl(337,65%,48%)"><title>M2 / S4 / E6 EOL edge</title></line>
+<text class="metal-label" x="181.767" y="388.306" text-anchor="middle">M1/S1</text>
+<text class="metal-label" x="202.586" y="299.082" text-anchor="middle">M1/S2</text>
+<text class="metal-label" x="229.353" y="407.28" text-anchor="middle">M2/S3</text>
+<text class="metal-label" x="479.181" y="404.306" text-anchor="middle">M2/S4</text>
+<text class="metal-label" x="500" y="315.082" text-anchor="middle">M2/S5</text>
+<text class="metal-label" x="526.767" y="407.28" text-anchor="middle">M2/S6</text>
+<text class="metal-label" x="776.595" y="388.306" text-anchor="middle">M1/S7</text>
+<text class="metal-label" x="797.414" y="315.082" text-anchor="middle">M2/S8</text>
+<text class="metal-label" x="824.181" y="391.28" text-anchor="middle">M1/S9</text>
 <rect x="86" y="686" width="20" height="12" class="metal"/>
 <text class="legend" x="116" y="697">Metal layers</text>
 <rect x="260" y="686" width="20" height="12" class="check"/>
@@ -73,4 +71,5 @@
 <line x1="86" y1="724" x2="106" y2="724" class="eol" style="stroke:#374151"/>
 <text class="legend" x="116" y="729">EOL edges and marker outlines use layer colors</text>
 <rect x="86" y="768" width="20" height="12" fill="hsl(200,65%,48%)"/><text class="legend" x="116" y="780">M1 (layer 1)</text>
+<rect x="306" y="768" width="20" height="12" fill="hsl(337,65%,48%)"/><text class="legend" x="336" y="780">M2 (layer 2)</text>
 </svg>

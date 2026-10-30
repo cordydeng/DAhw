@@ -725,76 +725,41 @@ static void collect_keepout_union_cutlines(const Box& bbox,
 }
 
 static void write_bpv_svg(const std::string& filename,
-                          const std::vector<LayerResult>& results) {
+                          const LayerResult& result,
+                          std::size_t layer_index) {
     std::ofstream svg(filename);
     if (!svg) throw std::runtime_error("Cannot write SVG file: " + filename);
 
-    bg::svg_mapper<Point> mapper(svg, 800, 800);
-    svg << "<rect x=\"0\" y=\"0\" width=\"800\" height=\"800\" fill=\"white\"/>\n";
+    {
+            bg::svg_mapper<Point> mapper(svg, 800, 800);
+            svg << "<rect width=\"800\" height=\"800\" fill=\"white\"/>\n";
+            mapper.add(box_polygon(padded_display_box(result.bbox)));
+            std::vector<Polygon> polygons = rectangle_polygons(result.rectangles);
+            for (const auto& polygon : polygons) mapper.add(polygon);
+            for (const auto& pin : result.pins) mapper.add(pin.shape);
+            Polygon border = box_polygon(result.bbox);
+            mapper.add(border);
 
-    Box overall_bbox = results.front().bbox;
-    std::vector<Pin> all_pins;
-    for (const auto& result : results) {
-        bg::expand(overall_bbox, result.bbox);
-        all_pins.insert(all_pins.end(), result.pins.begin(), result.pins.end());
+            for (const auto& polygon : polygons) {
+                mapper.map(polygon,
+                    "fill:#d0cece;fill-opacity:0.68;stroke:#505050;stroke-width:1.2");
+            }
+            PinStyle style = pin_style(layer_index);
+            const std::string svg_style =
+                "fill:" + style.fill + ";fill-opacity:0.72;stroke:" +
+                style.stroke + ";stroke-width:1.2";
+            for (const auto& pin : result.pins) {
+                mapper.map(pin.shape, svg_style);
+            }
+            mapper.map(border, "fill:none;stroke:#315e9d;stroke-width:1.5");
+            svg << "<g font-family=\"sans-serif\" font-size=\"15\">\n"
+                  << "<rect x=\"10\" y=\"10\" width=\"190\" height=\"76\" fill=\"white\" fill-opacity=\"0.9\" stroke=\"#555\"/>\n"
+                  << "<text x=\"20\" y=\"30\">Metal layer: " << escape_xml(result.layer.name) << "</text>\n"
+                  << "<rect x=\"20\" y=\"42\" width=\"16\" height=\"12\" fill=\"#d0cece\" stroke=\"#505050\"/>\n"
+                  << "<text x=\"44\" y=\"53\">Blockage</text>\n"
+                  << "<rect x=\"20\" y=\"65\" width=\"16\" height=\"12\" fill=\"" << style.fill << "\" stroke=\"" << style.stroke << "\"/>\n"
+                  << "<text x=\"44\" y=\"76\">Pin</text>\n</g>\n";
     }
-
-    MultiPolygon keepout_union =
-        union_pin_keepouts(all_pins, MIN_SPACING);
-    MultiPolygon overall_blockage =
-        carve_keepout_union(overall_bbox, keepout_union);
-    std::vector<double> xs, ys;
-    collect_keepout_union_cutlines(overall_bbox, keepout_union, xs, ys);
-    std::vector<Rect> overall_rectangles = decompose_using_cutlines(
-        overall_blockage, std::move(xs), std::move(ys));
-    std::vector<Polygon> overall_polygons =
-        rectangle_polygons(overall_rectangles);
-
-    Box display_bbox = padded_display_box(overall_bbox);
-    mapper.add(box_polygon(display_bbox));
-    for (const auto& polygon : overall_polygons) mapper.add(polygon);
-    for (const auto& pin : all_pins) mapper.add(pin.shape);
-    Polygon border = box_polygon(overall_bbox);
-    mapper.add(border);
-
-    for (const auto& polygon : overall_polygons) {
-        mapper.map(polygon,
-            "fill:#d0cece;fill-opacity:0.68;stroke:#505050;stroke-width:1.2");
-    }
-
-    for (std::size_t i = 0; i < results.size(); ++i) {
-        PinStyle style = pin_style(i);
-        const std::string svg_style =
-            "fill:" + style.fill + ";fill-opacity:0.72;stroke:" +
-            style.stroke + ";stroke-width:1.2";
-        for (const auto& pin : results[i].pins) {
-            mapper.map(pin.shape, svg_style);
-        }
-    }
-
-    mapper.map(border, "fill:none;stroke:#315e9d;stroke-width:1.5");
-
-    const double legend_height = 36.0 + 24.0 * results.size();
-    svg << "<g font-family=\"sans-serif\" font-size=\"14\">\n"
-        << "<rect x=\"10\" y=\"10\" width=\"175\" height=\""
-        << legend_height
-        << "\" rx=\"5\" fill=\"white\" fill-opacity=\"0.88\""
-        << " stroke=\"#555\"/>\n"
-        << "<rect x=\"20\" y=\"16\" width=\"18\" height=\"14\""
-        << " fill=\"#d0cece\" stroke=\"#505050\"/>\n"
-        << "<text x=\"47\" y=\"27\" fill=\"#202124\">"
-        << "Overall blockage</text>\n";
-    for (std::size_t i = 0; i < results.size(); ++i) {
-        PinStyle style = pin_style(i);
-        const double y = 51.0 + 24.0 * i;
-        svg << "<rect x=\"20\" y=\"" << y - 11.0
-            << "\" width=\"18\" height=\"14\" fill=\""
-            << style.fill << "\" stroke=\"" << style.stroke << "\"/>\n"
-            << "<text x=\"47\" y=\"" << y
-            << "\" fill=\"#202124\">"
-            << escape_xml(results[i].layer.name) << " pins</text>\n";
-    }
-    svg << "</g>\n";
 }
 
 static void set_svg_viewbox(const std::string& filename,
@@ -866,8 +831,8 @@ static void print_results(const std::vector<LayerResult>& results) {
     std::cout << "Generated:\n";
     for (const auto& result : results) {
         std::cout << "  " << layer_filename(result.layer) << "\n";
+        std::cout << "  BPV_" << layer_filename(result.layer) << "\n";
     }
-    std::cout << "  BPV.svg\n";
 }
 
 int main(int argc, char* argv[]) {
@@ -924,10 +889,10 @@ int main(int argc, char* argv[]) {
             std::string filename = layer_filename(results[i].layer);
             write_layer_svg(filename, results[i]);
             set_svg_viewbox(filename, 800, 800);
+            std::string bpv_filename = "BPV_" + filename;
+            write_bpv_svg(bpv_filename, results[i], i);
+            set_svg_viewbox(bpv_filename, 800, 800);
         }
-
-        write_bpv_svg("BPV.svg", results);
-        set_svg_viewbox("BPV.svg", 800, 800);
 
         print_results(results);
     }
