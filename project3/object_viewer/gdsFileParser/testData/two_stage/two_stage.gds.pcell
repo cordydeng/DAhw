@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<file-format version="1.0" synopsysExportStream="1.0">
+    <exportStream>
+        <KeepInstName Type="KeepPcell" PropNum="100"/>
+        <options lib="opamp" gds="/home/course/jtli/pdk/Synopsys/SNPS/Ccompiler/synopsys_custom/two_stage.gds" cell="opamp_two_stage" keepPcells="1" keepVias="1" keepAbuts="1" colorMapping="honor" useTechLayerMap="1" useTechObjectMap="1" textHeight="matchOABBox"/>
+        <mapping cellType="stdvia" streamName="VIA34_stdvia_bd3a" techLib="SAED_PDK_14" viaDef="VIA34">
+            <layers layerName1="M3" layerName2="M4"/>
+            <viaparams cutColumns="1" cutRows="1" cutWidth="0.046" cutHeight="0.046" cutLayer="24" cutSpacing="0.002,0.002" implant1Enc="0,0" implant2Enc="0,0" layer1Enc="0.03,0.003" layer2Enc="0.003,0.03" originOffset="0,0" layer1Offset="0,0" layer2Offset="0,0"/>
+        </mapping>
+        <mapping cellType="stdvia" streamName="VIA23_stdvia_0598" techLib="SAED_PDK_14" viaDef="VIA23">
+            <layers layerName1="M2" layerName2="M3"/>
+            <viaparams cutColumns="1" cutRows="1" cutWidth="0.03" cutHeight="0.03" cutLayer="22" cutSpacing="0.044,0.044" implant1Enc="0,0" implant2Enc="0,0" layer1Enc="0.002,0.03" layer2Enc="0.03,0.002" originOffset="0,0" layer1Offset="0,0" layer2Offset="0,0"/>
+        </mapping>
+        <mapping cellType="stdvia" streamName="VIA12_stdvia_d1e9" techLib="SAED_PDK_14" viaDef="VIA12">
+            <layers layerName1="M1" layerName2="M2"/>
+            <viaparams cutColumns="2" cutRows="1" cutWidth="0.03" cutHeight="0.03" cutLayer="20" cutSpacing="0.02,0.02" implant1Enc="0,0" implant2Enc="0,0" layer1Enc="0.002,0.03" layer2Enc="0.002,0.03" originOffset="0,0" layer1Offset="0,0" layer2Offset="0,0"/>
+        </mapping>
+        <mapping cellType="stdvia" streamName="VIA12_stdvia_8b5f" techLib="SAED_PDK_14" viaDef="VIA12">
+            <layers layerName1="M1" layerName2="M2"/>
+            <viaparams cutColumns="1" cutRows="2" cutWidth="0.03" cutHeight="0.03" cutLayer="20" cutSpacing="0.02,0.02" implant1Enc="0,0" implant2Enc="0,0" layer1Enc="0.002,0.03" layer2Enc="0.002,0.03" originOffset="0,0" layer1Offset="0,0" layer2Offset="0,0"/>
+        </mapping>
+        <mapping cellType="stdvia" streamName="VIA12_stdvia_2a27" techLib="SAED_PDK_14" viaDef="VIA12">
+            <layers layerName1="M1" layerName2="M2"/>
+            <viaparams cutColumns="1" cutRows="1" cutWidth="0.03" cutHeight="0.03" cutLayer="20" cutSpacing="0.02,0.02" implant1Enc="0,0" implant2Enc="0,0" layer1Enc="0.002,0.03" layer2Enc="0.002,0.03" originOffset="0,0" layer1Offset="0,0" layer2Offset="0,0"/>
+        </mapping>
+        <mapping cellType="design" streamName="pfet_18_pcell_e36a" lib="SAED_PDK_14" cell="pfet_18" view="layout">
+            <param name="rightAbut" type="booleanParam">1</param>
+            <param name="nf" type="intParam">1</param>
+            <param name="l" type="doubleParam">6e-07</param>
+            <param name="nfin" type="intParam">4</param>
+        </mapping>
+        <mapping cellType="design" streamName="pfet_18_pcell_d429" lib="SAED_PDK_14" cell="pfet_18" view="layout">
+            <param name="rightAbut" type="booleanParam">1</param>
+            <param name="leftAbut" type="booleanParam">1</param>
+            <param name="nf" type="intParam">1</param>
+            <param name="l" type="doubleParam">6e-07</param>
+            <param name="nfin" type="intParam">4</param>
+        </mapping>
+        <mapping cellType="design" streamName="pfet_18_pcell_b91f" lib="SAED_PDK_14" cell="pfet_18" view="layout">
+            <param name="leftAbut" type="booleanParam">1</param>
+            <param name="nf" type="intParam">1</param>
+            <param name="l" type="doubleParam">6e-07</param>
+            <param name="nfin" type="intParam">4</param>
+        </mapping>
+        <mapping cellType="design" streamName="nfet_18_pcell_1c0f" lib="SAED_PDK_14" cell="nfet_18" view="layout">
+            <param name="rightAbut" type="booleanParam">1</param>
+            <param name="nf" type="intParam">1</param>
+            <param name="l" type="doubleParam">1e-06</param>
+            <param name="nfin" type="intParam">4</param>
+        </mapping>
+        <mapping cellType="design" streamName="nfet_18_pcell_7706" lib="SAED_PDK_14" cell="nfet_18" view="layout">
+            <param name="rightAbut" type="booleanParam">1</param>
+            <param name="leftAbut" type="booleanParam">1</param>
+            <param name="nf" type="intParam">1</param>
+            <param name="l" type="doubleParam">1e-06</param>
+            <param name="nfin" type="intParam">4</param>
+        </mapping>
+        <mapping cellType="design" streamName="nfet_18_pcell_f1a0" lib="SAED_PDK_14" cell="nfet_18" view="layout">
+            <param name="leftAbut" type="booleanParam">1</param>
+            <param name="nf" type="intParam">1</param>
+            <param name="l" type="doubleParam">1e-06</param>
+            <param name="nfin" type="intParam">4</param>
+        </mapping>
+        <mapping cellType="design" streamName="nfet_18_pcell_d25c" lib="SAED_PDK_14" cell="nfet_18" view="layout">
+            <param name="rightAbut" type="booleanParam">1</param>
+            <param name="nf" type="intParam">1</param>
+            <param name="l" type="doubleParam">6e-07</param>
+            <param name="nfin" type="intParam">4</param>
+        </mapping>
+        <mapping cellType="design" streamName="nfet_18_pcell_ca44" lib="SAED_PDK_14" cell="nfet_18" view="layout">
+            <param name="rightAbut" type="booleanParam">1</param>
+            <param name="leftAbut" type="booleanParam">1</param>
+            <param name="nf" type="intParam">1</param>
+            <param name="l" type="doubleParam">6e-07</param>
+            <param name="nfin" type="intParam">4</param>
+        </mapping>
+        <mapping cellType="design" streamName="nfet_18_pcell_ec41" lib="SAED_PDK_14" cell="nfet_18" view="layout">
+            <param name="leftAbut" type="booleanParam">1</param>
+            <param name="nf" type="intParam">1</param>
+            <param name="l" type="doubleParam">6e-07</param>
+            <param name="nfin" type="intParam">4</param>
+        </mapping>
+        <mapping cellType="mpp" streamName="opamp_two_stage_mpp_1" name="vph1" definition="nwellGR" offset="0" centerline="(4049 17376 1),(15370 17376 2)">
+            <mppparams ntypeGuardRing_0_defaultPath_width="58" ntypeGuardRing_0_netName="vph"/>
+        </mapping>
+        <mapping cellType="mpp" streamName="opamp_two_stage_mpp_2" name="vss" definition="psubGR" offset="0" centerline="(29489 14325 1),(4019 14325 2)">
+            <mppparams ptypeGuardRing_0_defaultPath_width="58"/>
+        </mapping>
+        <mapping cellType="mpp" streamName="opamp_two_stage_mpp_3" name="vph" definition="nwellGR" offset="0" centerline="(16624 8225 1),(27945 8225 2)">
+            <mppparams ntypeGuardRing_0_defaultPath_width="58" ntypeGuardRing_0_netName="vph"/>
+        </mapping>
+    </exportStream>
+</file-format>

@@ -3,3 +3,14 @@
 *.exe
 .DS_Store
 /https:/
+
+# build output (qmake/make), any folder
+*.o
+moc_*
+qrc_*.cpp
+Makefile
+.qmake.stash
+**/object_viewer/object_viewer
+
+# the parser's own Makefile is source code, keep it
+!**/gdsFileParser/src/Makefile
