@@ -1,0 +1,590 @@
+GDSII Version: 600
+Lib start
+Modified Time: 
+	2005-03-17 14:20:51
+Accessed Time: 
+	2005-03-17 14:20:51
+LibName: mentor.db
+UserUnits: 0.001000000
+DBUnits: 0.000000001
+Structure start
+Modified Time: 
+	2001-11-11 04:43:34
+Accessed Time: 
+	2004-08-31 13:39:37
+StrName: via
+Boundry start
+Layer: 49
+Data Type: 0
+XY: 5
+(-2000,-2000)(2000,-2000)(2000,2000)(-2000,2000)(-2000,-2000)
+Element end
+Boundry start
+Layer: 51
+Data Type: 0
+XY: 5
+(-2000,-2000)(2000,-2000)(2000,2000)(-2000,2000)(-2000,-2000)
+Element end
+Boundry start
+Layer: 50
+Data Type: 0
+XY: 5
+(-1000,-1000)(1000,-1000)(1000,1000)(-1000,1000)(-1000,-1000)
+Element end
+Structure end
+Structure start
+Modified Time: 
+	2004-08-04 13:59:08
+Accessed Time: 
+	2004-08-31 13:39:37
+StrName: inv1
+Sref start
+Sname: via
+XY: 1
+(23000,70500)
+Element end
+Sref start
+Sname: via
+XY: 1
+(5500,56500)
+Element end
+Boundry start
+Layer: 2
+Data Type: 0
+XY: 5
+(0,0)(25000,0)(25000,10000)(0,10000)(0,0)
+Element end
+Boundry start
+Layer: 2
+Data Type: 0
+XY: 5
+(0,110000)(25000,110000)(25000,120000)(0,120000)(0,110000)
+Element end
+Boundry start
+Layer: 3
+Data Type: 0
+XY: 5
+(21000,68500)(25000,68500)(25000,72500)(21000,72500)(21000,68500)
+Element end
+Boundry start
+Layer: 3
+Data Type: 0
+XY: 5
+(3500,54500)(7500,54500)(7500,58500)(3500,58500)(3500,54500)
+Element end
+Boundry start
+Layer: 162
+Data Type: 0
+XY: 5
+(21000,68500)(25000,68500)(25000,72500)(21000,72500)(21000,68500)
+Element end
+Boundry start
+Layer: 162
+Data Type: 0
+XY: 5
+(3500,54500)(7500,54500)(7500,58500)(3500,58500)(3500,54500)
+Element end
+Boundry start
+Layer: 149
+Data Type: 0
+XY: 5
+(0,110000)(25000,110000)(25000,120000)(0,120000)(0,110000)
+Element end
+Boundry start
+Layer: 149
+Data Type: 0
+XY: 5
+(0,0)(25000,0)(25000,10000)(0,10000)(0,0)
+Element end
+Boundry start
+Layer: 149
+Data Type: 0
+XY: 5
+(10500,4500)(14500,4500)(14500,8500)(10500,8500)(10500,4500)
+Element end
+Boundry start
+Layer: 149
+Data Type: 0
+XY: 5
+(10500,111500)(14500,111500)(14500,115500)(10500,115500)(10500,111500)
+Element end
+Boundry start
+Layer: 149
+Data Type: 0
+XY: 5
+(3500,74500)(7500,74500)(7500,78500)(3500,78500)(3500,74500)
+Element end
+Boundry start
+Layer: 149
+Data Type: 0
+XY: 5
+(7500,5500)(10500,5500)(10500,20000)(7500,20000)(7500,5500)
+Element end
+Boundry start
+Layer: 149
+Data Type: 0
+XY: 5
+(7000,99500)(10000,99500)(10000,114000)(7000,114000)(7000,99500)
+Element end
+Path start
+Layer: 149
+Data Type: 0
+PathType: 2
+Width: 3000
+XY: 2
+(16500,70500)(23000,70500)
+Element end
+Path start
+Layer: 149
+Data Type: 0
+PathType: 2
+Width: 3000
+XY: 2
+(16500,43000)(16500,23500)
+Element end
+Path start
+Layer: 149
+Data Type: 0
+PathType: 2
+Width: 3000
+XY: 2
+(16500,100500)(16500,43000)
+Element end
+Path start
+Layer: 149
+Data Type: 0
+PathType: 2
+Width: 3000
+XY: 2
+(5500,56500)(5500,76500)
+Element end
+Boundry start
+Layer: 149
+Data Type: 0
+XY: 5
+(0,0)(25000,0)(25000,120000)(0,120000)(0,0)
+Element end
+Boundry start
+Layer: 48
+Data Type: 0
+XY: 5
+(15500,23000)(17500,23000)(17500,25000)(15500,25000)(15500,23000)
+Element end
+Boundry start
+Layer: 48
+Data Type: 0
+XY: 5
+(15500,18000)(17500,18000)(17500,20000)(15500,20000)(15500,18000)
+Element end
+Boundry start
+Layer: 48
+Data Type: 0
+XY: 5
+(7500,23000)(9500,23000)(9500,25000)(7500,25000)(7500,23000)
+Element end
+Boundry start
+Layer: 48
+Data Type: 0
+XY: 5
+(7500,18000)(9500,18000)(9500,20000)(7500,20000)(7500,18000)
+Element end
+Boundry start
+Layer: 48
+Data Type: 0
+XY: 5
+(7500,95000)(9500,95000)(9500,97000)(7500,97000)(7500,95000)
+Element end
+Boundry start
+Layer: 48
+Data Type: 0
+XY: 5
+(7500,100000)(9500,100000)(9500,102000)(7500,102000)(7500,100000)
+Element end
+Boundry start
+Layer: 48
+Data Type: 0
+XY: 5
+(15500,95000)(17500,95000)(17500,97000)(15500,97000)(15500,95000)
+Element end
+Boundry start
+Layer: 48
+Data Type: 0
+XY: 5
+(15500,100000)(17500,100000)(17500,102000)(15500,102000)(15500,100000)
+Element end
+Boundry start
+Layer: 48
+Data Type: 0
+XY: 5
+(11500,112500)(13500,112500)(13500,114500)(11500,114500)(11500,112500)
+Element end
+Boundry start
+Layer: 48
+Data Type: 0
+XY: 5
+(11500,5500)(13500,5500)(13500,7500)(11500,7500)(11500,5500)
+Element end
+Boundry start
+Layer: 43
+Data Type: 0
+XY: 5
+(6000,16500)(11500,16500)(11500,26500)(6000,26500)(6000,16500)
+Property Number: 1
+Prop Value: ,2
+Element end
+Boundry start
+Layer: 43
+Data Type: 0
+XY: 5
+(6000,16500)(19000,16500)(19000,26500)(6000,26500)(6000,16500)
+Element end
+Boundry start
+Layer: 43
+Data Type: 0
+XY: 5
+(13500,16500)(19000,16500)(19000,26500)(13500,26500)(13500,16500)
+Property Number: 1
+Prop Value: ,6
+Element end
+Boundry start
+Layer: 43
+Data Type: 0
+XY: 7
+(11500,91500)(11500,103500)(6000,103500)(6000,93500)(8500,93500)(8500,91500)(11500,91500)
+Property Number: 1
+Prop Value: ,2
+Element end
+Boundry start
+Layer: 43
+Data Type: 0
+XY: 7
+(16500,91500)(16500,93500)(19000,93500)(19000,103500)(13500,103500)(13500,91500)(16500,91500)
+Property Number: 1
+Prop Value: ,6
+Element end
+Boundry start
+Layer: 43
+Data Type: 0
+XY: 9
+(16500,91500)(16500,93500)(19000,93500)(19000,103500)(6000,103500)(6000,93500)(8500,93500)(8500,91500)(16500,91500)
+Element end
+Boundry start
+Layer: 43
+Data Type: 0
+XY: 5
+(9500,110500)(15500,110500)(15500,116500)(9500,116500)(9500,110500)
+Element end
+Boundry start
+Layer: 43
+Data Type: 0
+XY: 5
+(9500,3500)(15500,3500)(15500,9500)(9500,9500)(9500,3500)
+Element end
+Boundry start
+Layer: 41
+Data Type: 0
+XY: 5
+(0,10500)(25000,10500)(25000,32500)(0,32500)(0,10500)
+Property Number: 1
+Prop Value: ,7
+Element end
+Boundry start
+Layer: 41
+Data Type: 0
+XY: 5
+(6500,500)(18500,500)(18500,12500)(6500,12500)(6500,500)
+Element end
+Boundry start
+Layer: 44
+Data Type: 0
+XY: 9
+(18500,89500)(18500,91500)(21000,91500)(21000,105500)(4000,105500)(4000,91500)(6500,91500)(6500,89500)(18500,89500)
+Element end
+Boundry start
+Layer: 44
+Data Type: 0
+XY: 5
+(7500,1500)(17500,1500)(17500,11500)(7500,11500)(7500,1500)
+Element end
+Boundry start
+Layer: 46
+Data Type: 0
+XY: 5
+(11500,16500)(13500,16500)(13500,26500)(11500,26500)(11500,16500)
+Element end
+Boundry start
+Layer: 46
+Data Type: 0
+XY: 5
+(11500,26500)(13500,26500)(13500,28500)(11500,28500)(11500,26500)
+Property Number: 1
+Prop Value: ,4
+Element end
+Boundry start
+Layer: 46
+Data Type: 0
+XY: 5
+(11500,14500)(13500,14500)(13500,16500)(11500,16500)(11500,14500)
+Property Number: 1
+Prop Value: ,3
+Element end
+Boundry start
+Layer: 46
+Data Type: 0
+XY: 5
+(11500,89500)(13500,89500)(13500,91500)(11500,91500)(11500,89500)
+Property Number: 1
+Prop Value: ,3
+Element end
+Boundry start
+Layer: 46
+Data Type: 0
+XY: 5
+(11500,103500)(13500,103500)(13500,105500)(11500,105500)(11500,103500)
+Property Number: 1
+Prop Value: ,4
+Element end
+Boundry start
+Layer: 46
+Data Type: 0
+XY: 5
+(11500,91500)(13500,91500)(13500,103500)(11500,103500)(11500,91500)
+Element end
+Boundry start
+Layer: 46
+Data Type: 0
+XY: 5
+(3000,74000)(8000,74000)(8000,79000)(3000,79000)(3000,74000)
+Element end
+Path start
+Layer: 46
+Data Type: 0
+Width: 2000
+XY: 6
+(12500,92500)(12500,84000)(7000,84000)(7000,57000)(12500,57000)(12500,49000)
+Element end
+Path start
+Layer: 46
+Data Type: 0
+Width: 2000
+XY: 2
+(12500,49500)(12500,27500)
+Element end
+Boundry start
+Layer: 47
+Data Type: 0
+XY: 5
+(4500,75500)(6500,75500)(6500,77500)(4500,77500)(4500,75500)
+Element end
+Boundry start
+Layer: 45
+Data Type: 0
+XY: 5
+(4000,14500)(21000,14500)(21000,28500)(4000,28500)(4000,14500)
+Element end
+Boundry start
+Layer: 45
+Data Type: 0
+XY: 5
+(7500,108500)(17500,108500)(17500,118500)(7500,118500)(7500,108500)
+Element end
+Boundry start
+Layer: 42
+Data Type: 0
+XY: 9
+(22500,85500)(22500,87500)(25000,87500)(25000,109500)(0,109500)(0,87500)(2500,87500)(2500,85500)(22500,85500)
+Property Number: 1
+Prop Value: ,7
+Element end
+Boundry start
+Layer: 42
+Data Type: 0
+XY: 5
+(6500,107500)(18500,107500)(18500,119500)(6500,119500)(6500,107500)
+Element end
+Boundry start
+Layer: 49
+Data Type: 0
+XY: 5
+(14500,17000)(18500,17000)(18500,26000)(14500,26000)(14500,17000)
+Property Number: 1
+Prop Value: ,5
+Element end
+Boundry start
+Layer: 49
+Data Type: 0
+XY: 5
+(6500,17000)(10500,17000)(10500,26000)(6500,26000)(6500,17000)
+Property Number: 1
+Prop Value: ,1
+Element end
+Boundry start
+Layer: 49
+Data Type: 0
+XY: 5
+(14500,94000)(18500,94000)(18500,103000)(14500,103000)(14500,94000)
+Property Number: 1
+Prop Value: ,5
+Element end
+Boundry start
+Layer: 49
+Data Type: 0
+XY: 5
+(6500,94000)(10500,94000)(10500,103000)(6500,103000)(6500,94000)
+Property Number: 1
+Prop Value: ,1
+Element end
+Boundry start
+Layer: 49
+Data Type: 0
+XY: 5
+(0,110000)(25000,110000)(25000,120000)(0,120000)(0,110000)
+Element end
+Boundry start
+Layer: 49
+Data Type: 0
+XY: 5
+(0,0)(25000,0)(25000,10000)(0,10000)(0,0)
+Element end
+Boundry start
+Layer: 49
+Data Type: 0
+XY: 5
+(10500,4500)(14500,4500)(14500,8500)(10500,8500)(10500,4500)
+Element end
+Boundry start
+Layer: 49
+Data Type: 0
+XY: 5
+(10500,111500)(14500,111500)(14500,115500)(10500,115500)(10500,111500)
+Element end
+Boundry start
+Layer: 49
+Data Type: 0
+XY: 5
+(3500,74500)(7500,74500)(7500,78500)(3500,78500)(3500,74500)
+Element end
+Boundry start
+Layer: 49
+Data Type: 0
+XY: 5
+(7500,5500)(10500,5500)(10500,20000)(7500,20000)(7500,5500)
+Element end
+Path start
+Layer: 49
+Data Type: 0
+PathType: 2
+Width: 3000
+XY: 2
+(16500,70500)(23000,70500)
+Element end
+Path start
+Layer: 49
+Data Type: 0
+PathType: 2
+Width: 3000
+XY: 2
+(16500,43000)(16500,23500)
+Element end
+Boundry start
+Layer: 49
+Data Type: 0
+XY: 5
+(7000,99500)(10000,99500)(10000,114000)(7000,114000)(7000,99500)
+Element end
+Path start
+Layer: 49
+Data Type: 0
+PathType: 2
+Width: 3000
+XY: 2
+(16500,100500)(16500,43000)
+Element end
+Path start
+Layer: 49
+Data Type: 0
+PathType: 2
+Width: 3000
+XY: 2
+(5500,56500)(5500,76500)
+Element end
+Structure end
+Lib end
+****************************************************************************
+library: name=mentor.db unserUnits=0.001 dbUnit=1e-09
+cell: name=via
+  rectangle layer=49 xyNo=5 (-2000,-2000)(2000,-2000)(2000,2000)(-2000,2000)(-2000,-2000)
+  rectangle layer=51 xyNo=5 (-2000,-2000)(2000,-2000)(2000,2000)(-2000,2000)(-2000,-2000)
+  rectangle layer=50 xyNo=5 (-1000,-1000)(1000,-1000)(1000,1000)(-1000,1000)(-1000,-1000)
+cell: name=inv1
+  instance masterCell=via origin=(23000,70500)
+  instance masterCell=via origin=(5500,56500)
+  rectangle layer=2 xyNo=5 (0,0)(25000,0)(25000,10000)(0,10000)(0,0)
+  rectangle layer=2 xyNo=5 (0,110000)(25000,110000)(25000,120000)(0,120000)(0,110000)
+  rectangle layer=3 xyNo=5 (21000,68500)(25000,68500)(25000,72500)(21000,72500)(21000,68500)
+  rectangle layer=3 xyNo=5 (3500,54500)(7500,54500)(7500,58500)(3500,58500)(3500,54500)
+  rectangle layer=162 xyNo=5 (21000,68500)(25000,68500)(25000,72500)(21000,72500)(21000,68500)
+  rectangle layer=162 xyNo=5 (3500,54500)(7500,54500)(7500,58500)(3500,58500)(3500,54500)
+  rectangle layer=149 xyNo=5 (0,110000)(25000,110000)(25000,120000)(0,120000)(0,110000)
+  rectangle layer=149 xyNo=5 (0,0)(25000,0)(25000,10000)(0,10000)(0,0)
+  rectangle layer=149 xyNo=5 (10500,4500)(14500,4500)(14500,8500)(10500,8500)(10500,4500)
+  rectangle layer=149 xyNo=5 (10500,111500)(14500,111500)(14500,115500)(10500,115500)(10500,111500)
+  rectangle layer=149 xyNo=5 (3500,74500)(7500,74500)(7500,78500)(3500,78500)(3500,74500)
+  rectangle layer=149 xyNo=5 (7500,5500)(10500,5500)(10500,20000)(7500,20000)(7500,5500)
+  rectangle layer=149 xyNo=5 (7000,99500)(10000,99500)(10000,114000)(7000,114000)(7000,99500)
+  path layer=149 pathType=2 width=3000 bext=0 eext=0 xyNo=2 (16500,70500)(23000,70500)
+  path layer=149 pathType=2 width=3000 bext=0 eext=0 xyNo=2 (16500,43000)(16500,23500)
+  path layer=149 pathType=2 width=3000 bext=0 eext=0 xyNo=2 (16500,100500)(16500,43000)
+  path layer=149 pathType=2 width=3000 bext=0 eext=0 xyNo=2 (5500,56500)(5500,76500)
+  rectangle layer=149 xyNo=5 (0,0)(25000,0)(25000,120000)(0,120000)(0,0)
+  rectangle layer=48 xyNo=5 (15500,23000)(17500,23000)(17500,25000)(15500,25000)(15500,23000)
+  rectangle layer=48 xyNo=5 (15500,18000)(17500,18000)(17500,20000)(15500,20000)(15500,18000)
+  rectangle layer=48 xyNo=5 (7500,23000)(9500,23000)(9500,25000)(7500,25000)(7500,23000)
+  rectangle layer=48 xyNo=5 (7500,18000)(9500,18000)(9500,20000)(7500,20000)(7500,18000)
+  rectangle layer=48 xyNo=5 (7500,95000)(9500,95000)(9500,97000)(7500,97000)(7500,95000)
+  rectangle layer=48 xyNo=5 (7500,100000)(9500,100000)(9500,102000)(7500,102000)(7500,100000)
+  rectangle layer=48 xyNo=5 (15500,95000)(17500,95000)(17500,97000)(15500,97000)(15500,95000)
+  rectangle layer=48 xyNo=5 (15500,100000)(17500,100000)(17500,102000)(15500,102000)(15500,100000)
+  rectangle layer=48 xyNo=5 (11500,112500)(13500,112500)(13500,114500)(11500,114500)(11500,112500)
+  rectangle layer=48 xyNo=5 (11500,5500)(13500,5500)(13500,7500)(11500,7500)(11500,5500)
+  rectangle layer=43 xyNo=5 (6000,16500)(11500,16500)(11500,26500)(6000,26500)(6000,16500)
+  rectangle layer=43 xyNo=5 (6000,16500)(19000,16500)(19000,26500)(6000,26500)(6000,16500)
+  rectangle layer=43 xyNo=5 (13500,16500)(19000,16500)(19000,26500)(13500,26500)(13500,16500)
+  boundary layer=43 xyNo=7 (11500,91500)(11500,103500)(6000,103500)(6000,93500)(8500,93500)(8500,91500)(11500,91500)
+  boundary layer=43 xyNo=7 (16500,91500)(16500,93500)(19000,93500)(19000,103500)(13500,103500)(13500,91500)(16500,91500)
+  boundary layer=43 xyNo=9 (16500,91500)(16500,93500)(19000,93500)(19000,103500)(6000,103500)(6000,93500)(8500,93500)(8500,91500)(16500,91500)
+  rectangle layer=43 xyNo=5 (9500,110500)(15500,110500)(15500,116500)(9500,116500)(9500,110500)
+  rectangle layer=43 xyNo=5 (9500,3500)(15500,3500)(15500,9500)(9500,9500)(9500,3500)
+  rectangle layer=41 xyNo=5 (0,10500)(25000,10500)(25000,32500)(0,32500)(0,10500)
+  rectangle layer=41 xyNo=5 (6500,500)(18500,500)(18500,12500)(6500,12500)(6500,500)
+  boundary layer=44 xyNo=9 (18500,89500)(18500,91500)(21000,91500)(21000,105500)(4000,105500)(4000,91500)(6500,91500)(6500,89500)(18500,89500)
+  rectangle layer=44 xyNo=5 (7500,1500)(17500,1500)(17500,11500)(7500,11500)(7500,1500)
+  rectangle layer=46 xyNo=5 (11500,16500)(13500,16500)(13500,26500)(11500,26500)(11500,16500)
+  rectangle layer=46 xyNo=5 (11500,26500)(13500,26500)(13500,28500)(11500,28500)(11500,26500)
+  rectangle layer=46 xyNo=5 (11500,14500)(13500,14500)(13500,16500)(11500,16500)(11500,14500)
+  rectangle layer=46 xyNo=5 (11500,89500)(13500,89500)(13500,91500)(11500,91500)(11500,89500)
+  rectangle layer=46 xyNo=5 (11500,103500)(13500,103500)(13500,105500)(11500,105500)(11500,103500)
+  rectangle layer=46 xyNo=5 (11500,91500)(13500,91500)(13500,103500)(11500,103500)(11500,91500)
+  rectangle layer=46 xyNo=5 (3000,74000)(8000,74000)(8000,79000)(3000,79000)(3000,74000)
+  path layer=46 pathType=0 width=2000 bext=0 eext=0 xyNo=6 (12500,92500)(12500,84000)(7000,84000)(7000,57000)(12500,57000)(12500,49000)
+  path layer=46 pathType=0 width=2000 bext=0 eext=0 xyNo=2 (12500,49500)(12500,27500)
+  rectangle layer=47 xyNo=5 (4500,75500)(6500,75500)(6500,77500)(4500,77500)(4500,75500)
+  rectangle layer=45 xyNo=5 (4000,14500)(21000,14500)(21000,28500)(4000,28500)(4000,14500)
+  rectangle layer=45 xyNo=5 (7500,108500)(17500,108500)(17500,118500)(7500,118500)(7500,108500)
+  boundary layer=42 xyNo=9 (22500,85500)(22500,87500)(25000,87500)(25000,109500)(0,109500)(0,87500)(2500,87500)(2500,85500)(22500,85500)
+  rectangle layer=42 xyNo=5 (6500,107500)(18500,107500)(18500,119500)(6500,119500)(6500,107500)
+  rectangle layer=49 xyNo=5 (14500,17000)(18500,17000)(18500,26000)(14500,26000)(14500,17000)
+  rectangle layer=49 xyNo=5 (6500,17000)(10500,17000)(10500,26000)(6500,26000)(6500,17000)
+  rectangle layer=49 xyNo=5 (14500,94000)(18500,94000)(18500,103000)(14500,103000)(14500,94000)
+  rectangle layer=49 xyNo=5 (6500,94000)(10500,94000)(10500,103000)(6500,103000)(6500,94000)
+  rectangle layer=49 xyNo=5 (0,110000)(25000,110000)(25000,120000)(0,120000)(0,110000)
+  rectangle layer=49 xyNo=5 (0,0)(25000,0)(25000,10000)(0,10000)(0,0)
+  rectangle layer=49 xyNo=5 (10500,4500)(14500,4500)(14500,8500)(10500,8500)(10500,4500)
+  rectangle layer=49 xyNo=5 (10500,111500)(14500,111500)(14500,115500)(10500,115500)(10500,111500)
+  rectangle layer=49 xyNo=5 (3500,74500)(7500,74500)(7500,78500)(3500,78500)(3500,74500)
+  rectangle layer=49 xyNo=5 (7500,5500)(10500,5500)(10500,20000)(7500,20000)(7500,5500)
+  path layer=49 pathType=2 width=3000 bext=0 eext=0 xyNo=2 (16500,70500)(23000,70500)
+  path layer=49 pathType=2 width=3000 bext=0 eext=0 xyNo=2 (16500,43000)(16500,23500)
+  rectangle layer=49 xyNo=5 (7000,99500)(10000,99500)(10000,114000)(7000,114000)(7000,99500)
+  path layer=49 pathType=2 width=3000 bext=0 eext=0 xyNo=2 (16500,100500)(16500,43000)
+  path layer=49 pathType=2 width=3000 bext=0 eext=0 xyNo=2 (5500,56500)(5500,76500)
